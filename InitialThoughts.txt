@@ -1,0 +1,8 @@
+Use multiagent approach.
+
+Design an agent the is able to solve a single agent level decently. Refine this agent with communication assets and evolve it into a multi agent system.
+
+We need good heuristics, better than Manhatten distance. Do we want to rely on heuristics on do we want to rely more on hierarchical planning?
+
+We probably want to do online planning, since we plan on doing multi-agent. Do we want to do plan merging? Initial thoughts is no.
+
