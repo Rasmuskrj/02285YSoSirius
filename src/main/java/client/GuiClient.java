@@ -25,6 +25,11 @@ import javax.swing.JTextField;
 import javax.swing.UIManager;
 
 public class GuiClient extends JFrame {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	private static ActionListener listener = new ActionListener() {
 		@Override
 		public void actionPerformed( ActionEvent e ) {
@@ -82,6 +87,10 @@ public class GuiClient extends JFrame {
 	}
 
 	private class CommandButton extends JButton {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
 		public final String cmd;
 		public final ServerTransmitter t;
 
@@ -115,6 +124,11 @@ public class GuiClient extends JFrame {
 	private ServerTransmitter transmitter;
 
 	private class GBC extends GridBagConstraints {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
 		public GBC( int x, int y ) {
 			this( x, y, 1 );
 		}

@@ -8,7 +8,9 @@ public class RandomWalkClient {
 
 	public class Agent {
 		// We don't actually use these for Randomly Walking Around
+		@SuppressWarnings("unused")
 		private char id;
+		@SuppressWarnings("unused")
 		private String color;
 
 		Agent( char id, String color ) {

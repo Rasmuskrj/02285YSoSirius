@@ -1,4 +1,5 @@
-Code/.project
-Code/.classpath
-Code/.idea
+.project
+.classpath
+.idea
 *.class
+/bin
