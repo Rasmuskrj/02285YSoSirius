@@ -20,3 +20,5 @@ From here we have three weeks, in which we can improve our solution. Things will
 18/05/2015: submission deadline for contest solutions.
 
 02/06/2015: submission deadline for report.
+
+Homework for next time: Work on the agent. More thoughts on how we solve this problem optimally.
