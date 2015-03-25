@@ -10,8 +10,10 @@ public class OneAgentClient {
 	// the client can actually work as a blackboard, I'd think (at least for now)
 	private Node initialState = new Node(null);
 
+	// uncomment two lines below if testing without server and comment the third line
+	//FileReader fr = new FileReader("levels/Simple.lvl");
+	//private BufferedReader in = new BufferedReader(fr);
 	private BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-	//private List<Agent> agents = new ArrayList<Agent>();
 	
 	public int actionCount = 0;
 
@@ -24,6 +26,20 @@ public class OneAgentClient {
 			// TODO: change to threads
 			agent.setSolution(this.search(agent.getStrategy()));
 		}
+		
+		// might want to uncomment the block below for local testing (serverless)
+		/*
+		System.err.println("Solution found: ");
+		int count = 0;
+		String output = initialState.agents.get(initialState.agents.size() - 1).act(count);
+		while (!output.equals("NoOp")) {
+			System.err.print(output + " ");
+			count++;
+			output = initialState.agents.get(initialState.agents.size() - 1).act(count);
+		}
+		System.err.println();
+		*/
+		
 	}
 	
 	public LinkedList<Node> search(Strategy strategy) {
@@ -66,7 +82,7 @@ public class OneAgentClient {
 
 		// Read lines specifying level layout
 		int lineCount = 0;
-		while (!line.equals("")) {
+		while (line != null && !line.equals("")) {
 			for (int i = 0; i < line.length(); i++) {
 				char id = line.charAt(i);
 				if ('0' <= id && id <= '9') {				// Agents
@@ -86,13 +102,13 @@ public class OneAgentClient {
 	}
 
 	public boolean update() throws IOException {
-		String jointAction = "[";
-
-		for (int i = 0; i < initialState.agents.size() - 1; i++)
-			jointAction += initialState.agents.get(i).act(actionCount) + ",";
 		
-		jointAction += initialState.agents.get(initialState.agents.size() - 1).act(actionCount) + "]";
-		System.err.println(jointAction);
+		String jointAction = "";
+
+		//for (int i = 0; i < initialState.agents.size() - 1; i++)
+		//	jointAction += initialState.agents.get(i).act(actionCount) + ",";
+		
+		jointAction += initialState.agents.get(initialState.agents.size() - 1).act(actionCount);
 		
 		actionCount++;
 		

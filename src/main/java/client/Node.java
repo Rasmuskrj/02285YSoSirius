@@ -10,11 +10,11 @@ import client.Command.type;
 
 public class Node {
 
-	public static HashMap<Coordinate, Boolean> walls;
-    private static HashMap<Coordinate, Goal> goalsByCoordinate;
-    private static HashMap<Character, Goal> goalsByID;
-    private HashMap<Coordinate, Box> boxesByCoordinate;
-    private HashMap<Character, Box> boxesByID;
+	public static HashMap<Coordinate, Boolean> walls = new HashMap<Coordinate, Boolean>();
+    private static HashMap<Coordinate, Goal> goalsByCoordinate = new HashMap<Coordinate, Goal>();
+    private static HashMap<Character, Goal> goalsByID = new HashMap<Character, Goal>();
+    private HashMap<Coordinate, Box> boxesByCoordinate = new HashMap<Coordinate, Box>();
+    private HashMap<Character, Box> boxesByID = new HashMap<Character, Box>();
 
 	//public int agentRow;
 	//public int agentCol;
@@ -82,15 +82,15 @@ public class Node {
 		for (Coordinate key : Node.goalsByCoordinate.keySet()) {
 			Goal goal = Node.goalsByCoordinate.get(key);
 			Box box = boxesByCoordinate.get(key);
-			if (Character.toLowerCase(box.getLetter()) != goal.getLetter()) {
+			if (box == null || Character.toLowerCase(box.getLetter()) != goal.getLetter()) {
 				return false;
 			}
 		}
 		return true;
 	}
 
-	public ArrayList< Node > getExpandedNodes() {
-		ArrayList< Node > expandedNodes = new ArrayList< Node >(Command.every.length);
+	public ArrayList<Node> getExpandedNodes() {
+		ArrayList<Node> expandedNodes = new ArrayList<Node>(Command.every.length);
 		for (Command c : Command.every) {
 			// Determine applicability of action
 			int newAgentRow = this.agents.get(0).getCoordinate().getRow() + dirToRowChange(c.dir1);
@@ -99,7 +99,7 @@ public class Node {
 			if (c.actType == type.Move) {
 				// Check if there's a wall or box on the cell to which the agent is moving
 				if (cellIsFree(newAgentRow, newAgentCol)) {
-					Node n = this.ChildNode();
+					Node n = this.childNode();
 					n.action = c;
 					n.agents.get(0).getCoordinate().setRow(newAgentRow);
 					n.agents.get(0).getCoordinate().setColumn(newAgentCol);
@@ -112,13 +112,16 @@ public class Node {
 					int newBoxCol = newAgentCol + dirToColChange(c.dir2);
 					// .. and that new cell of box is free
 					if (cellIsFree(newBoxRow, newBoxCol)) {
-						Node n = this.ChildNode();
+						Node n = this.childNode();
 						n.action = c;
 						n.agents.get(0).getCoordinate().setRow(newAgentRow);
 						n.agents.get(0).getCoordinate().setColumn(newAgentCol);
-						n.boxesByCoordinate.put(new Coordinate(newBoxRow, newBoxCol), 
-									this.boxesByCoordinate.get(new Coordinate(newAgentRow, newAgentCol)));
+						Box boxToMove = this.boxesByCoordinate.get(
+											new Coordinate(newAgentRow, newAgentCol));
+						n.boxesByCoordinate.put(new Coordinate(newBoxRow, newBoxCol), boxToMove);
 						n.boxesByCoordinate.remove(new Coordinate(newAgentRow, newAgentCol));
+						n.boxesByID.remove(boxToMove.getLetter());
+						n.boxesByID.put(boxToMove.getLetter(), boxToMove);
 						expandedNodes.add(n);
 					}
 				}
@@ -129,26 +132,28 @@ public class Node {
 					int boxCol = this.agents.get(0).getCoordinate().getColumn() + dirToColChange(c.dir2);
 					// .. and there's a box in "dir2" of the agent
 					if (boxAt(boxRow, boxCol)) {
-						Node n = this.ChildNode();
+						Node n = this.childNode();
 						n.action = c;
 						n.agents.get(0).getCoordinate().setRow(newAgentRow);
 						n.agents.get(0).getCoordinate().setColumn(newAgentCol);
+						Box boxToMove = this.boxesByCoordinate.get(
+											new Coordinate(boxRow, boxCol));
 						n.boxesByCoordinate.put(
 								new Coordinate(this.agents.get(0).getCoordinate().getRow(), 
-											this.agents.get(0).getCoordinate().getRow()), 
-										this.boxesByCoordinate.get(new Coordinate(boxRow, boxCol)));
+										this.agents.get(0).getCoordinate().getColumn()), boxToMove);
 						n.boxesByCoordinate.remove(new Coordinate(boxRow, boxCol));
+						n.boxesByID.remove(boxToMove.getLetter());
+						n.boxesByID.put(boxToMove.getLetter(), boxToMove);
 						expandedNodes.add(n);
 					}
 				}
 			}
 		}
-		//Collections.shuffle(expandedNodes, rnd);
 		return expandedNodes;
 	}
 
 	private boolean cellIsFree(int row, int col) {
-		return (!Node.walls.get(new Coordinate(row, col)) 
+		return (Node.walls.get(new Coordinate(row, col)) == null
 					&& this.boxesByCoordinate.get(new Coordinate(row, col)) == null);
 	}
 
@@ -164,10 +169,14 @@ public class Node {
 		return (d == dir.E ? 1 : (d == dir.W ? -1 : 0)); // East is left one column (1), west is right one column (-1)
 	}
 
-	private Node ChildNode() {
+	private Node childNode() {
 		Node copy = new Node(this);
 		for (Coordinate key : this.boxesByCoordinate.keySet()) {
 			copy.boxesByCoordinate.put(key, this.boxesByCoordinate.get(key));
+			copy.boxesByID.put(this.boxesByCoordinate.get(key).getLetter(), this.boxesByCoordinate.get(key));
+		}
+		for (Agent agent : this.agents) {
+			copy.agents.add(agent.clone());
 		}
 		return copy;
 	}
@@ -181,6 +190,23 @@ public class Node {
 		}
 		return plan;
 	}
+	
+	@Override
+    public boolean equals(Object obj) {
+    	if (this == obj)
+    		return true;
+    	if (obj == null)
+    		return false;
+    	if (this.getClass() != obj.getClass())
+    		return false;
+    	Node other = (Node) obj;
+    	if (this.parent != other.parent || this.action != other.action
+    			|| !this.agents.equals(other.agents)
+    			|| !this.boxesByCoordinate.equals(other.getBoxesByCoordinate())
+    			|| !this.boxesByID.equals(other.getBoxesByID()))
+    		return false;
+    	return true;
+    }
 
 	/* TODO: refactor - if needed
 	@Override

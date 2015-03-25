@@ -21,7 +21,7 @@ public abstract class Heuristic implements Comparator< Node > {
 		int maxH = 0;
 		for (Character itemName : Node.getGoalsByID().keySet()) {
 			Coordinate goalCoordinate = Node.getGoalsByID().get(itemName).getCoordinate();
-			Coordinate boxCoordinate = n.getBoxesByID().get(itemName).getCoordinate();
+			Coordinate boxCoordinate = n.getBoxesByID().get(Character.toUpperCase(itemName)).getCoordinate();
 			int newH = Math.abs(n.agents.get(0).getCoordinate().getRow() - goalCoordinate.getRow()) 
 						+ Math.abs(n.agents.get(0).getCoordinate().getColumn() 
 											- goalCoordinate.getColumn()) - 1
@@ -41,7 +41,7 @@ public abstract class Heuristic implements Comparator< Node > {
 		int sumH = 0;
 		for (Character itemName : Node.getGoalsByID().keySet()) {
 			Coordinate goalCoordinate = Node.getGoalsByID().get(itemName).getCoordinate();
-			Coordinate boxCoordinate = n.getBoxesByID().get(itemName).getCoordinate();
+			Coordinate boxCoordinate = n.getBoxesByID().get(Character.toUpperCase(itemName)).getCoordinate();
 			int newH = Math.abs(n.agents.get(0).getCoordinate().getRow() - goalCoordinate.getRow()) 
 						+ Math.abs(n.agents.get(0).getCoordinate().getColumn() 
 											- goalCoordinate.getColumn()) - 1
