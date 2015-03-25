@@ -4,7 +4,7 @@ import java.util.HashSet;
 
 public abstract class Strategy {
 
-	public HashSet< Node > explored;
+	public HashSet<Node> explored;
 	public long startTime = System.currentTimeMillis();
 	
 	public Strategy() {

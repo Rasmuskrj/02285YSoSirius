@@ -64,4 +64,11 @@ public class Agent {
 		this.solution = solution;
 	}
 	
+	@Override
+	public Agent clone() {
+		Agent newAgent = new Agent(this.id, this.color, 
+					new Coordinate(this.coordinate.getRow(), this.coordinate.getColumn()));
+		return newAgent;
+	}
+	
 }
