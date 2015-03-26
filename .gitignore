@@ -3,3 +3,5 @@
 .idea
 *.class
 /bin
+.settings/
+src/main/main.iml
