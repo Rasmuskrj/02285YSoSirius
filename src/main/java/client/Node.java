@@ -1,5 +1,6 @@
 package client;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -18,6 +19,11 @@ public class Node {
 
 	//public int agentRow;
 	//public int agentCol;
+    
+    public static int totalRows;
+    public static int totalColumns;
+    
+    private int f;
     
     public List<Agent> agents = new ArrayList<Agent>();
 
@@ -116,12 +122,16 @@ public class Node {
 						n.action = c;
 						n.agents.get(0).getCoordinate().setRow(newAgentRow);
 						n.agents.get(0).getCoordinate().setColumn(newAgentCol);
+						// TODO: eventually refactor with clone()
 						Box boxToMove = this.boxesByCoordinate.get(
 											new Coordinate(newAgentRow, newAgentCol));
-						n.boxesByCoordinate.put(new Coordinate(newBoxRow, newBoxCol), boxToMove);
+						Box boxToMoveCopy = new Box(boxToMove.getLetter(), boxToMove.getColor(),
+													new Coordinate(newBoxRow, newBoxCol));
+						//boxToMove.setCoordinate(new Coordinate(newBoxRow, newBoxCol));
+						n.boxesByCoordinate.put(new Coordinate(newBoxRow, newBoxCol), boxToMoveCopy);
 						n.boxesByCoordinate.remove(new Coordinate(newAgentRow, newAgentCol));
-						n.boxesByID.remove(boxToMove.getLetter());
-						n.boxesByID.put(boxToMove.getLetter(), boxToMove);
+						n.boxesByID.remove(boxToMoveCopy.getLetter());
+						n.boxesByID.put(boxToMoveCopy.getLetter(), boxToMoveCopy);
 						expandedNodes.add(n);
 					}
 				}
@@ -134,16 +144,22 @@ public class Node {
 					if (boxAt(boxRow, boxCol)) {
 						Node n = this.childNode();
 						n.action = c;
-						n.agents.get(0).getCoordinate().setRow(newAgentRow);
-						n.agents.get(0).getCoordinate().setColumn(newAgentCol);
+						// TODO: eventually refactor with clone()
 						Box boxToMove = this.boxesByCoordinate.get(
 											new Coordinate(boxRow, boxCol));
-						n.boxesByCoordinate.put(
+						Box boxToMoveCopy = new Box(boxToMove.getLetter(), boxToMove.getColor(),
 								new Coordinate(this.agents.get(0).getCoordinate().getRow(), 
-										this.agents.get(0).getCoordinate().getColumn()), boxToMove);
+										this.agents.get(0).getCoordinate().getColumn()));
+						//Coordinate newBoxCoordinate = new Coordinate(this.agents.get(0).getCoordinate().getRow(), 
+						//					this.agents.get(0).getCoordinate().getColumn()); 
+						//boxToMove.setCoordinate(newBoxCoordinate);
+						n.boxesByCoordinate.put(new Coordinate(this.agents.get(0).getCoordinate().getRow(), 
+								this.agents.get(0).getCoordinate().getColumn()), boxToMoveCopy);
 						n.boxesByCoordinate.remove(new Coordinate(boxRow, boxCol));
-						n.boxesByID.remove(boxToMove.getLetter());
-						n.boxesByID.put(boxToMove.getLetter(), boxToMove);
+						n.boxesByID.remove(boxToMoveCopy.getLetter());
+						n.boxesByID.put(boxToMoveCopy.getLetter(), boxToMoveCopy);
+						n.agents.get(0).getCoordinate().setRow(newAgentRow);
+						n.agents.get(0).getCoordinate().setColumn(newAgentCol);
 						expandedNodes.add(n);
 					}
 				}
@@ -207,6 +223,44 @@ public class Node {
     		return false;
     	return true;
     }
+
+	public void printState() {
+		StringBuilder builder = new StringBuilder();
+		for (int i=0; i<Node.totalRows; i++) {
+			for (int j=0; j<Node.totalColumns; j++) {
+				if (Node.walls.get(new Coordinate(i, j)) != null) {
+					builder.append('+');
+				} else if (this.agents.get(0).getCoordinate().equals(new Coordinate(i, j))){
+					builder.append(this.agents.get(0).getId());
+				} else if (this.boxesByCoordinate.get(new Coordinate(i, j)) != null) {
+					builder.append(this.boxesByCoordinate.get(new Coordinate(i, j)).getLetter());
+				} else if (Node.goalsByCoordinate.get(new Coordinate(i, j)) != null) {
+					builder.append(Node.goalsByCoordinate.get(new Coordinate(i, j)).getLetter());
+				} else {
+					builder.append(' ');
+				}
+			}
+			builder.append('\n');
+		}
+		System.err.print(builder.toString());
+		try {
+			System.in.read();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public int getF() {
+		return f;
+	}
+
+	public void setF(int f) {
+		this.f = f;
+	}
+	
+	public String toString() {
+		return "" + this.f;
+	}
 
 	/* TODO: refactor - if needed
 	@Override
