@@ -11,7 +11,7 @@ public class OneAgentClient {
 	private Node initialState = new Node(null);
 
 	// uncomment two lines below if testing without server and comment the third line
-	//FileReader fr = new FileReader("levels/Simple.lvl");
+	//FileReader fr = new FileReader("levels/SAchimney2.lvl");
 	//private BufferedReader in = new BufferedReader(fr);
 	private BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 	
@@ -27,8 +27,8 @@ public class OneAgentClient {
 			agent.setSolution(this.search(agent.getStrategy()));
 		}
 		
-		// might want to uncomment the block below for local testing (serverless)
-		/*
+		// TODO: this can be removed when no more debugging will be done, ever
+		
 		System.err.println("Solution found: ");
 		int count = 0;
 		String output = initialState.agents.get(initialState.agents.size() - 1).act(count);
@@ -38,21 +38,24 @@ public class OneAgentClient {
 			output = initialState.agents.get(initialState.agents.size() - 1).act(count);
 		}
 		System.err.println();
-		*/
+		
 		
 	}
 	
 	public LinkedList<Node> search(Strategy strategy) {
 		strategy.addToFrontier(this.initialState);
 		while (true) {
-			if (strategy.timeSpent() > 300) {
-				return null;
-			}
+			//if (strategy.timeSpent() > 300) {
+			//	return null;
+			//}
 			if (strategy.frontierIsEmpty()) {
 				return null;
 			}
 			
 			Node leafNode = strategy.getAndRemoveLeaf();
+			// uncomment below for more debugging:
+			//System.err.println("Chosen: " + (leafNode.action != null ? leafNode.action.toActionString() : ""));
+			//leafNode.printState();
 			
 			if ( leafNode.isGoalState() ) {
 				return leafNode.extractPlan();
@@ -82,7 +85,11 @@ public class OneAgentClient {
 
 		// Read lines specifying level layout
 		int lineCount = 0;
+		int maxColumns = 0;
 		while (line != null && !line.equals("")) {
+			if (line.length() > maxColumns) {
+				maxColumns = line.length();
+			}
 			for (int i = 0; i < line.length(); i++) {
 				char id = line.charAt(i);
 				if ('0' <= id && id <= '9') {				// Agents
@@ -99,6 +106,8 @@ public class OneAgentClient {
 			line = in.readLine();
 			lineCount++;
 		}
+		Node.totalRows = lineCount;
+		Node.totalColumns = maxColumns;
 	}
 
 	public boolean update() throws IOException {
@@ -136,6 +145,7 @@ public class OneAgentClient {
 			while (client.update());
 
 		} catch (IOException e) {
+			System.err.println(e.getMessage());
 			// Got nowhere to write to probably
 		}
 	}
