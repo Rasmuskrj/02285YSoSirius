@@ -1,10 +1,7 @@
 package client;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 import client.Command.dir;
 import client.Command.type;
@@ -16,6 +13,7 @@ public class Node {
     private static HashMap<Character, Goal> goalsByID = new HashMap<Character, Goal>();
     private HashMap<Coordinate, Box> boxesByCoordinate = new HashMap<Coordinate, Box>();
     private HashMap<Character, Box> boxesByID = new HashMap<Character, Box>();
+	private PriorityQueue<Box> easiestBoxes;
 
 	//public int agentRow;
 	//public int agentCol;
@@ -35,12 +33,37 @@ public class Node {
 	public Node(Node parent) {
 		this.parent = parent;
 		this.boxesByCoordinate = new HashMap<Coordinate, Box>();
+		this.easiestBoxes = new PriorityQueue<>(20, boxComparator);
 		if (parent == null) {
 			g = 0;
 		} else {
 			g = parent.g() + 1;
 		}
 	}
+
+	public static Comparator<Box> boxComparator = new Comparator<Box>() {
+		@Override
+		public int compare(Box o1, Box o2) {
+			int box1Dist = Integer.MAX_VALUE;
+			int box2Dist = Integer.MAX_VALUE;
+			for(Goal goal : Node.getGoalsByCoordinate().values()){
+				if(goal.getLetter() == Character.toLowerCase(o1.getLetter()) && !Node.isBoxInTargetGoalCell(o1)){
+					int box1CheckDist = Math.abs(goal.getCoordinate().getRow() - o1.getCoordinate().getRow()) +
+							Math.abs(goal.getCoordinate().getColumn() - o1.getCoordinate().getColumn());
+					if(box1CheckDist < box1Dist)
+						box1Dist = box1CheckDist;
+				}
+				if(goal.getLetter() == Character.toLowerCase(o2.getLetter()) && !Node.isBoxInTargetGoalCell(o2)){
+					int box2CheckDist = Math.abs(goal.getCoordinate().getRow() - o2.getCoordinate().getRow()) +
+							Math.abs(goal.getCoordinate().getColumn() - o2.getCoordinate().getColumn());
+					if(box2CheckDist < box2Dist)
+						box2Dist = box2CheckDist;
+				}
+			}
+
+			return (int) (box2Dist - box1Dist);
+		}
+	};
 	
 	public HashMap<Coordinate, Box> getBoxesByCoordinate() {
         return boxesByCoordinate;
@@ -50,9 +73,14 @@ public class Node {
         return boxesByID;
     }
 
+	public PriorityQueue<Box> getEasiestBoxes(){
+		return easiestBoxes;
+	}
+
     public void addBox(Box box) {
         this.boxesByCoordinate.put(box.getCoordinate(), box);
         this.boxesByID.put(box.getLetter(), box);
+		this.easiestBoxes.offer(box);
     }
     
     public static HashMap<Coordinate, Goal> getGoalsByCoordinate() {
@@ -93,6 +121,15 @@ public class Node {
 			}
 		}
 		return true;
+	}
+
+	public static boolean isBoxInTargetGoalCell(Box box){
+		for(Coordinate goalCord : Node.getGoalsByCoordinate().keySet()){
+			if(box.getLetter() == Character.toUpperCase(Node.getGoalsByCoordinate().get(goalCord).getLetter()) && box.getCoordinate().equals(goalCord)){
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public ArrayList<Node> getExpandedNodes() {
@@ -190,6 +227,7 @@ public class Node {
 		for (Coordinate key : this.boxesByCoordinate.keySet()) {
 			copy.boxesByCoordinate.put(key, this.boxesByCoordinate.get(key));
 			copy.boxesByID.put(this.boxesByCoordinate.get(key).getLetter(), this.boxesByCoordinate.get(key));
+			copy.easiestBoxes.offer(this.boxesByCoordinate.get(key));
 		}
 		for (Agent agent : this.agents) {
 			copy.agents.add(agent.clone());

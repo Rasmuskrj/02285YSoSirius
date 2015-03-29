@@ -11,7 +11,7 @@ public class OneAgentClient {
 	private Node initialState = new Node(null);
 
 	// uncomment two lines below if testing without server and comment the third line
-	//FileReader fr = new FileReader("levels/SAchimney10.lvl");
+	//FileReader fr = new FileReader("levels/SAchimney2.lvl");
 	//private BufferedReader in = new BufferedReader(fr);
 	private BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 	
@@ -145,6 +145,7 @@ public class OneAgentClient {
 			while (client.update());
 
 		} catch (IOException e) {
+			System.err.println(e.getMessage());
 			// Got nowhere to write to probably
 		}
 	}
