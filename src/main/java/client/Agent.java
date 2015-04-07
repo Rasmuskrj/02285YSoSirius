@@ -76,4 +76,24 @@ public class Agent {
 		return newAgent;
 	}
 
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		Agent agent = (Agent) o;
+
+		if (id != agent.id) return false;
+		if (color != null ? !color.equals(agent.color) : agent.color != null) return false;
+		return coordinate.equals(agent.coordinate);
+
+	}
+
+	@Override
+	public int hashCode() {
+		int result = (int) id;
+		result = 31 * result + (color != null ? color.hashCode() : 0);
+		result = 31 * result + coordinate.hashCode();
+		return result;
+	}
 }

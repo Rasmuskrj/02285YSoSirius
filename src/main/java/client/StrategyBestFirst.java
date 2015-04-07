@@ -45,6 +45,9 @@ public class StrategyBestFirst extends Strategy {
 		}
 		frontier.get(key).add(n);
 		*/
+		if(frontier.size() % 1000 == 0){
+			System.err.println(this.searchStatus());
+		}
 		n.setF(heuristic.f(n));
 		frontier.offer(n);
 	}

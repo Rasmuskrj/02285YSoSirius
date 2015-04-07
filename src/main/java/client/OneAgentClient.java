@@ -1,6 +1,7 @@
 package client;
 
 import heuristics.AStarHeuristic;
+import heuristics.GreedyHeuristic;
 
 import java.io.*;
 import java.util.*;
@@ -34,6 +35,7 @@ public class OneAgentClient {
 			System.err.println("Solution found for sub-goal: " + subgoal.getLetter() + " at " + subgoal.getCoordinate().getRow() + "," + subgoal.getCoordinate().getColumn());
 			agent.appendSolution(plan);
 			subgoal.setCurrentMainGoal(false);
+			while(update());
 			initialState = agent.getSolution().getLast();
 			initialState.agents.get(0).setSolution(agent.getSolution());
 			initialState.parent = null;
@@ -135,6 +137,9 @@ public class OneAgentClient {
 
 		//for (int i = 0; i < initialState.agents.size() - 1; i++)
 		//	jointAction += initialState.agents.get(i).act(actionCount) + ",";
+		if(initialState.agents.get(initialState.agents.size() - 1).act(actionCount).equals("NoOp")){
+			return false;
+		}
 		
 		jointAction += initialState.agents.get(initialState.agents.size() - 1).act(actionCount);
 		
@@ -161,7 +166,7 @@ public class OneAgentClient {
 		System.err.println("Hello from OneAgentClient. I am sending this using the error outputstream");
 		try {
 			OneAgentClient client = new OneAgentClient();
-			while (client.update());
+			//while (client.update());
 
 		} catch (IOException e) {
 			System.err.println(e.getMessage());

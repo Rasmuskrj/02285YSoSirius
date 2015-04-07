@@ -81,40 +81,11 @@ public abstract class Heuristic implements Comparator< Node > {
 		return sumH;
 	}
 
-	private int sumManhattenPrioritizeClosestHeuristic(Node n){
-		int sumH = 0;
-
-		PriorityQueue<Box> targetBoxes = n.getEasiestBoxes();
-		while (!targetBoxes.isEmpty()){
-			Box box = targetBoxes.poll();
-			int goalDist = Integer.MAX_VALUE;
-			Goal targetGoal = Node.getGoalsByID().get(Character.toLowerCase(box.getLetter()));
-			for(Goal goal : Node.getGoalsByCoordinate().values()){
-				Character itemName = goal.getLetter();
-				Coordinate goalCoordinate = goal.getCoordinate();
-				int distance = Math.abs(box.getCoordinate().getColumn() - goalCoordinate.getColumn()) + Math.abs(box.getCoordinate().getRow() - goalCoordinate.getRow());
-				if(itemName == Character.toLowerCase(box.getLetter()) && distance < goalDist){
-					targetGoal = goal;
-					goalDist = distance;
-				}
-			}
-			if (!targetGoal.getCoordinate().equals(box.getCoordinate())) {
-				int newH = Math.abs(n.agents.get(0).getCoordinate().getRow() - box.getCoordinate().getRow())
-						+ Math.abs(n.agents.get(0).getCoordinate().getColumn()
-						- box.getCoordinate().getColumn()) - 1
-						+ Math.abs(box.getCoordinate().getRow() - targetGoal.getCoordinate().getRow())
-						+ Math.abs(box.getCoordinate().getColumn() - targetGoal.getCoordinate().getColumn());
-				sumH += newH + 1000;
-			}
-		}
-		System.err.println("  " + sumH);
-		return sumH;
-	}
 
 	private int manhattanSubgoalHeuristic(Node n){
 		int ret = 0;
 		Goal currentSubGoal = null;
-		//Find current main subgoal
+		//Find current main subgoal. CurrentMainGoal is set in the while-loop in OneAgentClient
 		for (Goal goal : Node.getGoalsByCoordinate().values()){
 			if(goal.isCurrentMainGoal()){
 				currentSubGoal = goal;
@@ -126,7 +97,7 @@ public abstract class Heuristic implements Comparator< Node > {
 			int boxDistance = Integer.MAX_VALUE;
 			Box targetBox = null;
 			for(Box box : n.getBoxesByCoordinate().values()){
-				if(!Node.isBoxInTargetGoalCell(box) && box.getLetter() == Character.toUpperCase(currentSubGoal.getLetter())){
+				if(!box.isInFinalPosition() && box.getLetter() == Character.toUpperCase(currentSubGoal.getLetter())){
 					int dist = Math.abs(box.getCoordinate().getColumn() - currentSubGoal.getCoordinate().getColumn()) + Math.abs(box.getCoordinate().getRow() - currentSubGoal.getCoordinate().getRow());
 					if(dist < boxDistance){
 						targetBox = box;
@@ -135,10 +106,12 @@ public abstract class Heuristic implements Comparator< Node > {
 				}
 			}
 			if(targetBox != null){
-				ret = boxDistance + Math.abs(n.agents.get(0).getCoordinate().getRow() - targetBox.getCoordinate().getRow()) +
+				//calculate heuristic. There is extra weight in moving the box closer to its goal.
+				ret = (10 * boxDistance) + Math.abs(n.agents.get(0).getCoordinate().getRow() - targetBox.getCoordinate().getRow()) +
 						Math.abs(n.agents.get(0).getCoordinate().getColumn() - targetBox.getCoordinate().getColumn());
 				Command com = n.action;
 				if(com != null && !(com.actType == Command.type.Move)){
+					//if the agent is moving boxes that is not the target box, the heuristic is worsened.
 					int boxRow = n.agents.get(0).getCoordinate().getRow() + n.dirToRowChange(com.dir2);
 					int boxCol = n.agents.get(0).getCoordinate().getColumn() + n.dirToColChange(com.dir2);
 					if(!(boxRow == targetBox.getCoordinate().getRow() && boxCol == targetBox.getCoordinate().getColumn() )){
