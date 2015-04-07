@@ -10,8 +10,11 @@ public class OneAgentClient {
 	// the client can actually work as a blackboard, I'd think (at least for now)
 	private Node initialState = new Node(null);
 
+	private PriorityQueue<Goal> subGoals;
+	private Queue<Node> subGoalProblems;
+
 	// uncomment two lines below if testing without server and comment the third line
-	//FileReader fr = new FileReader("levels/SAchimney2.lvl");
+	//FileReader fr = new FileReader("levels/SAanagram.lvl");
 	//private BufferedReader in = new BufferedReader(fr);
 	private BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 	
@@ -19,13 +22,29 @@ public class OneAgentClient {
 
 	public OneAgentClient() throws IOException {
 		readMap();
-		
-		for (Agent agent : initialState.getAgents()) {
+		findSubgoals();
+
+		Agent agent = initialState.getAgents().get(0);
+		while (!subGoals.isEmpty()){
+			Goal subgoal = subGoals.poll();
+			System.err.println("Trying to solve sub-goal: " + subgoal.getLetter() + " at " + subgoal.getCoordinate().getRow() + "," + subgoal.getCoordinate().getColumn());
+			subgoal.setCurrentMainGoal(true);
+			agent.setStrategy(new StrategyBestFirst(new AStarHeuristic(initialState)));
+			LinkedList<Node> plan = this.search(agent.getStrategy());
+			System.err.println("Solution found for sub-goal: " + subgoal.getLetter() + " at " + subgoal.getCoordinate().getRow() + "," + subgoal.getCoordinate().getColumn());
+			agent.appendSolution(plan);
+			subgoal.setCurrentMainGoal(false);
+			initialState = agent.getSolution().getLast();
+			initialState.agents.get(0).setSolution(agent.getSolution());
+			initialState.parent = null;
+		}
+		//TODO: Commented out for loop while working on single agent
+		/*for (Agent agent : initialState.getAgents()) {
 			agent.setStrategy(new StrategyBestFirst(new AStarHeuristic(initialState)));
 		
 			// TODO: change to threads
 			agent.setSolution(this.search(agent.getStrategy()));
-		}
+		}*/
 		
 		// TODO: this can be removed when no more debugging will be done, ever
 		
@@ -149,4 +168,20 @@ public class OneAgentClient {
 			// Got nowhere to write to probably
 		}
 	}
+
+	public void findSubgoals(){
+		Node.setGoalsPriority();
+		subGoals = new PriorityQueue<>(20, subGoalComparator);
+		for (Goal goal : Node.getGoalsByCoordinate().values()){
+			subGoals.offer(goal);
+		}
+	}
+
+	public static Comparator<Goal> subGoalComparator = new Comparator<Goal>() {
+		@Override
+		public int compare(Goal o1, Goal o2) {
+			return (int) o2.getPriority() - o1.getPriority();
+		}
+	};
+
 }

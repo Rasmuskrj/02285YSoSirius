@@ -4,6 +4,7 @@ public class Box {
     private char letter;
     private String color;
     private Coordinate coordinate;
+    private boolean inFinalPosition = false;
 
     public Box(char letter, String color, Coordinate coordinate) {
         this.letter = letter;
@@ -33,5 +34,13 @@ public class Box {
 
     public void setCoordinate(Coordinate coordinate) {
         this.coordinate = coordinate;
+    }
+
+    public boolean isInFinalPosition() {
+        return inFinalPosition;
+    }
+
+    public void setInFinalPosition(boolean inFinalPosition) {
+        this.inFinalPosition = inFinalPosition;
     }
 }

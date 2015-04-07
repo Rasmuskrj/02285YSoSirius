@@ -3,10 +3,7 @@ package heuristics;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 
-import client.Box;
-import client.Coordinate;
-import client.Node;
-import client.Goal;
+import client.*;
 
 public abstract class Heuristic implements Comparator< Node > {
 
@@ -114,11 +111,58 @@ public abstract class Heuristic implements Comparator< Node > {
 		return sumH;
 	}
 
+	private int manhattanSubgoalHeuristic(Node n){
+		int ret = 0;
+		Goal currentSubGoal = null;
+		//Find current main subgoal
+		for (Goal goal : Node.getGoalsByCoordinate().values()){
+			if(goal.isCurrentMainGoal()){
+				currentSubGoal = goal;
+				break;
+			}
+		}
+		if(currentSubGoal != null){
+			//find closest box that can be used to solve
+			int boxDistance = Integer.MAX_VALUE;
+			Box targetBox = null;
+			for(Box box : n.getBoxesByCoordinate().values()){
+				if(!Node.isBoxInTargetGoalCell(box) && box.getLetter() == Character.toUpperCase(currentSubGoal.getLetter())){
+					int dist = Math.abs(box.getCoordinate().getColumn() - currentSubGoal.getCoordinate().getColumn()) + Math.abs(box.getCoordinate().getRow() - currentSubGoal.getCoordinate().getRow());
+					if(dist < boxDistance){
+						targetBox = box;
+						boxDistance = dist;
+					}
+				}
+			}
+			if(targetBox != null){
+				ret = boxDistance + Math.abs(n.agents.get(0).getCoordinate().getRow() - targetBox.getCoordinate().getRow()) +
+						Math.abs(n.agents.get(0).getCoordinate().getColumn() - targetBox.getCoordinate().getColumn());
+				Command com = n.action;
+				if(com != null && !(com.actType == Command.type.Move)){
+					int boxRow = n.agents.get(0).getCoordinate().getRow() + n.dirToRowChange(com.dir2);
+					int boxCol = n.agents.get(0).getCoordinate().getColumn() + n.dirToColChange(com.dir2);
+					if(!(boxRow == targetBox.getCoordinate().getRow() && boxCol == targetBox.getCoordinate().getColumn() )){
+						ret += 10;
+					}
+				}
+
+			} else {
+				if(!n.isGoalState()) {
+					System.err.println("Error calculating heuristics: No free box to solve current main sub-goal");
+				}
+			}
+		} else {
+			System.err.println("Error calculating heuristics: No goal is current main sub-goal");
+		}
+		return ret;
+	}
+
 	public int h(Node n) {
 		//return maxManhattanHeuristic(n);
 		//return sumManhattanHeuristic(n);
 		//return sumManhattanExcludeSolvedHeuristic(n);
-		return sumManhattenPrioritizeClosestHeuristic(n);
+		//return sumManhattenPrioritizeClosestHeuristic(n);
+		return manhattanSubgoalHeuristic(n);
 	}
 
 	public abstract int f(Node n);

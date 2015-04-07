@@ -5,6 +5,7 @@ import java.util.*;
 
 import client.Command.dir;
 import client.Command.type;
+import sun.plugin.dom.core.CoreConstants;
 
 public class Node {
 
@@ -113,14 +114,16 @@ public class Node {
 	}
 
 	public boolean isGoalState() {
-		for (Coordinate key : Node.goalsByCoordinate.keySet()) {
-			Goal goal = Node.goalsByCoordinate.get(key);
-			Box box = boxesByCoordinate.get(key);
-			if (box == null || Character.toLowerCase(box.getLetter()) != goal.getLetter()) {
-				return false;
+		for(Goal goal : Node.getGoalsByCoordinate().values()){
+			if(goal.isCurrentMainGoal()){
+				Box box = boxesByCoordinate.get(goal.getCoordinate());
+				if(box != null && box.getLetter() == Character.toUpperCase(goal.getLetter())){
+					box.setInFinalPosition(true);
+					return true;
+				}
 			}
 		}
-		return true;
+		return false;
 	}
 
 	public static boolean isBoxInTargetGoalCell(Box box){
@@ -131,6 +134,43 @@ public class Node {
 		}
 		return false;
 	}
+
+	public static void setGoalsPriority(){
+		for(Goal goal : Node.getGoalsByCoordinate().values()){
+			if(goal.getPriority() < 1){
+				goal.setPriority(setSingleGoalPriority(goal));
+			}
+		}
+	}
+
+	public static int setSingleGoalPriority(Goal goal){
+		Coordinate nCord = new Coordinate(goal.getCoordinate().getRow() - 1,goal.getCoordinate().getColumn());
+		Coordinate wCord = new Coordinate(goal.getCoordinate().getRow(), goal.getCoordinate().getColumn() -1 );
+		Coordinate sCord = new Coordinate(goal.getCoordinate().getRow() +1, goal.getCoordinate().getColumn());
+		Coordinate eCord = new Coordinate(goal.getCoordinate().getRow(), goal.getCoordinate().getColumn() +1);
+		ArrayList<Coordinate> newCords = new ArrayList<>();
+		newCords.add(nCord);
+		newCords.add(wCord);
+		newCords.add(sCord);
+		newCords.add(eCord);
+		int returnVal = Integer.MAX_VALUE;
+		for( Coordinate cord : newCords){
+			if(Node.walls.get(cord) == null && Node.getGoalsByCoordinate().get(cord) == null){
+				goal.setPriority(1);
+				return 1;
+			} else if(Node.getGoalsByCoordinate().get(cord) != null){
+				Goal target = Node.getGoalsByCoordinate().get(cord);
+				if(target.getPriority() < 1) {
+					goal.setPriority(setSingleGoalPriority(target) + 1);
+				} else {
+					goal.setPriority(target.getPriority() + 1);
+				}
+				returnVal = goal.getPriority() < returnVal ? goal.getPriority() : returnVal;
+			}
+		}
+		return returnVal;
+	}
+
 
 	public ArrayList<Node> getExpandedNodes() {
 		ArrayList<Node> expandedNodes = new ArrayList<Node>(Command.every.length);
@@ -211,14 +251,15 @@ public class Node {
 	}
 
 	private boolean boxAt(int row, int col) {
-		return this.boxesByCoordinate.get(new Coordinate(row, col)) != null;
+		Box box = this.boxesByCoordinate.get(new Coordinate(row, col));
+		return box != null && !box.isInFinalPosition();
 	}
 
-	private int dirToRowChange(dir d) { 
+	public int dirToRowChange(dir d) {
 		return (d == dir.S ? 1 : (d == dir.N ? -1 : 0)); // South is down one row (1), north is up one row (-1)
 	}
 
-	private int dirToColChange(dir d) {
+	public int dirToColChange(dir d) {
 		return (d == dir.E ? 1 : (d == dir.W ? -1 : 0)); // East is left one column (1), west is right one column (-1)
 	}
 
