@@ -15,6 +15,7 @@ public class Node {
     private HashMap<Coordinate, Box> boxesByCoordinate = new HashMap<Coordinate, Box>();
     private HashMap<Character, Box> boxesByID = new HashMap<Character, Box>();
 
+	public Agent thisAgent = null;
 	//public int agentRow;
 	//public int agentCol;
     
@@ -84,7 +85,14 @@ public class Node {
 	}
 
 	public boolean isGoalState() {
-		for(Goal goal : Node.getGoalsByCoordinate().values()){
+		Goal goal = thisAgent.getCurrentSubGoal();
+		Box box = boxesByCoordinate.get(goal.getCoordinate());
+		if(box != null && box.getLetter() == Character.toUpperCase(goal.getLetter())){
+			box.setInFinalPosition(true);
+			return true;
+		}
+
+		/*for(Goal goal : Node.getGoalsByCoordinate().values()){
 			if(goal.isCurrentMainGoal()){
 				Box box = boxesByCoordinate.get(goal.getCoordinate());
 				if(box != null && box.getLetter() == Character.toUpperCase(goal.getLetter())){
@@ -92,7 +100,7 @@ public class Node {
 					return true;
 				}
 			}
-		}
+		}*/
 		return false;
 	}
 
@@ -244,6 +252,16 @@ public class Node {
 		return (d == dir.E ? 1 : (d == dir.W ? -1 : 0)); // East is left one column (1), west is right one column (-1)
 	}
 
+	public void setParent(Node parent){
+		if(parent == null){
+			this.parent = null;
+			g = 0;
+		} else {
+			this.parent = parent;
+			this.g = parent.g;
+		}
+	}
+
 	private Node childNode() {
 		Node copy = new Node(this);
 		for (Coordinate key : this.boxesByCoordinate.keySet()) {
@@ -251,6 +269,19 @@ public class Node {
 			copy.boxesByID.put(this.boxesByCoordinate.get(key).getLetter(), this.boxesByCoordinate.get(key));
 		}
 		for (Agent agent : this.agents) {
+			copy.agents.add(agent.clone());
+		}
+		return copy;
+	}
+
+	public Node getCopy(){
+		Node copy = new Node(this);
+		copy.setParent(parent);
+		for(Coordinate key : this.getBoxesByCoordinate().keySet()) {
+			copy.boxesByCoordinate.put(key, this.boxesByCoordinate.get(key));
+			copy.boxesByID.put(this.boxesByCoordinate.get(key).getLetter(), this.boxesByCoordinate.get(key));
+		}
+		for (Agent agent : this.agents){
 			copy.agents.add(agent.clone());
 		}
 		return copy;
@@ -345,6 +376,8 @@ public class Node {
 		}*/
 		return true;
 	}
+
+
 
 
 	// TODO: refactor - if needed

@@ -86,12 +86,14 @@ public abstract class Heuristic implements Comparator< Node > {
 		int ret = 0;
 		Goal currentSubGoal = null;
 		//Find current main subgoal. CurrentMainGoal is set in the while-loop in OneAgentClient
-		for (Goal goal : Node.getGoalsByCoordinate().values()){
+		currentSubGoal = n.thisAgent.getCurrentSubGoal();
+
+		/*for (Goal goal : Node.getGoalsByCoordinate().values()){
 			if(goal.isCurrentMainGoal()){
 				currentSubGoal = goal;
 				break;
 			}
-		}
+		}*/
 		if(currentSubGoal != null){
 			//find closest box that can be used to solve
 			int boxDistance = Integer.MAX_VALUE;

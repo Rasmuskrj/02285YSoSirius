@@ -9,6 +9,7 @@ public class Agent {
 	private Coordinate coordinate;
 	private Strategy strategy;
 	private LinkedList<Node> solution;
+	private Goal CurrentSubGoal = null;
 
 	public Agent(char id, String color, Coordinate coordinate) {
 		this.id = id;
@@ -68,7 +69,15 @@ public class Agent {
 	public void appendSolution(LinkedList<Node> partialSolution){
 		this.solution.addAll(partialSolution);
 	}
-	
+
+	public Goal getCurrentSubGoal() {
+		return CurrentSubGoal;
+	}
+
+	public void setCurrentSubGoal(Goal currentSubGoal) {
+		CurrentSubGoal = currentSubGoal;
+	}
+
 	@Override
 	public Agent clone() {
 		Agent newAgent = new Agent(this.id, this.color, 
