@@ -16,7 +16,7 @@ public class Node {
     private HashMap<Coordinate, Box> boxesByCoordinate = new HashMap<Coordinate, Box>();
     private HashMap<Character, Box> boxesByID = new HashMap<Character, Box>();
 	private PriorityQueue<Box> easiestBoxes;
-	private static HashMap<Goal, HashMap<Coordinate, Integer>> goalDistance = 
+	public static HashMap<Goal, HashMap<Coordinate, Integer>> goalDistance = 
 				new HashMap<Goal, HashMap<Coordinate, Integer>>();
 
 	//public int agentRow;
@@ -45,7 +45,7 @@ public class Node {
 	}
 	
 	public static void computeGoalDistance() {
-		for (Goal goal : Node.getGoalsByID().values()) {
+		for (Goal goal : Node.getGoalsByCoordinate().values()) {
 			HashMap<Coordinate, Integer> distanceMap = new HashMap<Coordinate, Integer>();
 			LinkedList<Coordinate> frontier = new LinkedList<Coordinate>();
 			HashSet<Coordinate> frontierHash = new HashSet<Coordinate>();
@@ -87,7 +87,7 @@ public class Node {
 		}
 		
 		/* DEBUGGING
-		for (Goal goal : Node.getGoalsByID().values()) {
+		for (Goal goal : Node.getGoalsByCoordinate().values()) {
 			System.err.println(goal.getLetter() + "\n\n");
 			
 			for (int i=0; i<Node.totalRows; i++) {
@@ -109,6 +109,8 @@ public class Node {
 			
 			System.err.println("\n\n=====================\n\n");
 		}
+		
+		System.exit(0);
 		*/
 		
 	}
