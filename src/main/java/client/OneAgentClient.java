@@ -11,14 +11,17 @@ public class OneAgentClient {
 	private Node initialState = new Node(null);
 
 	// uncomment two lines below if testing without server and comment the third line
-	//FileReader fr = new FileReader("levels/SAchimney2.lvl");
-	//private BufferedReader in = new BufferedReader(fr);
-	private BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+	FileReader fr = new FileReader("levels/SAbispebjerg.lvl");
+	private BufferedReader in = new BufferedReader(fr);
+	//private BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 	
 	public int actionCount = 0;
 
 	public OneAgentClient() throws IOException {
 		readMap();
+		Node.computeGoalDistance();
+		
+		System.exit(0);
 		
 		for (Agent agent : initialState.getAgents()) {
 			agent.setStrategy(new StrategyBestFirst(new AStarHeuristic(initialState)));
