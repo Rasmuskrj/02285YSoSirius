@@ -14,6 +14,7 @@ public class Agent {
 		this.id = id;
 		this.color = color;
 		this.coordinate = coordinate;
+		this.solution = new LinkedList<>();
 	}
 
 	public String act(int i) {
@@ -63,6 +64,10 @@ public class Agent {
 	public void setSolution(LinkedList<Node> solution) {
 		this.solution = solution;
 	}
+
+	public void appendSolution(LinkedList<Node> partialSolution){
+		this.solution.addAll(partialSolution);
+	}
 	
 	@Override
 	public Agent clone() {
@@ -70,5 +75,25 @@ public class Agent {
 					new Coordinate(this.coordinate.getRow(), this.coordinate.getColumn()));
 		return newAgent;
 	}
-	
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		Agent agent = (Agent) o;
+
+		if (id != agent.id) return false;
+		if (color != null ? !color.equals(agent.color) : agent.color != null) return false;
+		return coordinate.equals(agent.coordinate);
+
+	}
+
+	@Override
+	public int hashCode() {
+		int result = (int) id;
+		result = 31 * result + (color != null ? color.hashCode() : 0);
+		result = 31 * result + coordinate.hashCode();
+		return result;
+	}
 }

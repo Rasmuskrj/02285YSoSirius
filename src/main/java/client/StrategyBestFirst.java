@@ -2,15 +2,12 @@ package client;
 
 import heuristics.Heuristic;
 
-import java.util.ArrayDeque;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.PriorityQueue;
-import java.util.TreeMap;
+import java.util.*;
 
 public class StrategyBestFirst extends Strategy {
 	private static Heuristic heuristic;
 	private PriorityQueue<Node> frontier; //TreeMap<Integer, ArrayDeque<Node>> frontier;
+	private HashSet<Node> frontierCopy;
 	
 	public static Comparator<Node> nodeComparator = new Comparator<Node>(){  
         @Override
@@ -23,11 +20,13 @@ public class StrategyBestFirst extends Strategy {
 		super();
 		heuristic = h;
 		frontier = new PriorityQueue<Node>(10, nodeComparator);//new TreeMap<Integer, ArrayDeque<Node>>();
+		frontierCopy = new HashSet<>();
 	}
 	
 	public Node getAndRemoveLeaf() {
 		Node leaf = null;
 		leaf = frontier.poll();
+		frontierCopy.remove(leaf);
 		/*
 		leaf = frontier.firstEntry().getValue().pollFirst();
 		if (frontier.firstEntry().getValue().size() == 0) {
@@ -45,8 +44,12 @@ public class StrategyBestFirst extends Strategy {
 		}
 		frontier.get(key).add(n);
 		*/
+		if(frontier.size() % 1000 == 0){
+			System.err.println(this.searchStatus());
+		}
 		n.setF(heuristic.f(n));
 		frontier.offer(n);
+		frontierCopy.add(n);
 	}
 
 	public int countFrontier() {
@@ -81,7 +84,7 @@ public class StrategyBestFirst extends Strategy {
 			}
 		}
 		*/
-		return frontier.contains(n);
+		return frontierCopy.contains(n);
 	}
 
 	public String toString() {
