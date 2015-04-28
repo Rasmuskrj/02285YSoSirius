@@ -3,6 +3,8 @@ package client;
 import java.io.IOException;
 import java.util.*;
 
+import com.sun.org.apache.bcel.internal.generic.NEW;
+
 import client.Command.dir;
 import client.Command.type;
 
@@ -14,6 +16,8 @@ public class Node {
     private HashMap<Coordinate, Box> boxesByCoordinate = new HashMap<Coordinate, Box>();
     private HashMap<Character, Box> boxesByID = new HashMap<Character, Box>();
 	private PriorityQueue<Box> easiestBoxes;
+	public static HashMap<Goal, HashMap<Coordinate, Integer>> goalDistance = 
+				new HashMap<Goal, HashMap<Coordinate, Integer>>();
 
 	//public int agentRow;
 	//public int agentCol;
@@ -33,37 +37,83 @@ public class Node {
 	public Node(Node parent) {
 		this.parent = parent;
 		this.boxesByCoordinate = new HashMap<Coordinate, Box>();
-		this.easiestBoxes = new PriorityQueue<>(20, boxComparator);
 		if (parent == null) {
 			g = 0;
 		} else {
 			g = parent.g() + 1;
 		}
 	}
-
-	public static Comparator<Box> boxComparator = new Comparator<Box>() {
-		@Override
-		public int compare(Box o1, Box o2) {
-			int box1Dist = Integer.MAX_VALUE;
-			int box2Dist = Integer.MAX_VALUE;
-			for(Goal goal : Node.getGoalsByCoordinate().values()){
-				if(goal.getLetter() == Character.toLowerCase(o1.getLetter()) && !Node.isBoxInTargetGoalCell(o1)){
-					int box1CheckDist = Math.abs(goal.getCoordinate().getRow() - o1.getCoordinate().getRow()) +
-							Math.abs(goal.getCoordinate().getColumn() - o1.getCoordinate().getColumn());
-					if(box1CheckDist < box1Dist)
-						box1Dist = box1CheckDist;
-				}
-				if(goal.getLetter() == Character.toLowerCase(o2.getLetter()) && !Node.isBoxInTargetGoalCell(o2)){
-					int box2CheckDist = Math.abs(goal.getCoordinate().getRow() - o2.getCoordinate().getRow()) +
-							Math.abs(goal.getCoordinate().getColumn() - o2.getCoordinate().getColumn());
-					if(box2CheckDist < box2Dist)
-						box2Dist = box2CheckDist;
+	
+	public static void computeGoalDistance() {
+		for (Goal goal : Node.getGoalsByCoordinate().values()) {
+			HashMap<Coordinate, Integer> distanceMap = new HashMap<Coordinate, Integer>();
+			LinkedList<Coordinate> frontier = new LinkedList<Coordinate>();
+			HashSet<Coordinate> frontierHash = new HashSet<Coordinate>();
+			// initially put only the goal in the distance map
+			distanceMap.put(goal.getCoordinate(), 0);
+			// and the goal's neighbours (4-vicinity) in the frontier
+			for (Coordinate coordinate : goal.getCoordinate().get4VicinityCoordinates()) {
+				if (Node.walls.get(coordinate) == null && 
+						coordinate.getRow() > -1 && coordinate.getRow() < Node.totalRows &&
+						coordinate.getColumn() > -1 && coordinate.getColumn() < Node.totalColumns) {
+					frontier.add(coordinate);
+					frontierHash.add(coordinate);
 				}
 			}
-
-			return (int) (box2Dist - box1Dist);
+			// then in each loop move elements in frontier to distanceMap (take min distance)
+			// and add their neighbours to frontier
+			while (!frontier.isEmpty()) {
+				Coordinate coordinate = frontier.poll();
+				frontierHash.remove(coordinate);
+				Integer minDistance = Integer.MAX_VALUE;
+				for (Coordinate neighbour : coordinate.get4VicinityCoordinates()) {
+					if (distanceMap.containsKey(neighbour) && distanceMap.get(neighbour) < minDistance) {
+						minDistance = distanceMap.get(neighbour);
+					}
+				}
+				distanceMap.put(coordinate, minDistance+1);
+				for (Coordinate neighbour : coordinate.get4VicinityCoordinates()) {
+					if (Node.walls.get(neighbour) == null && 
+							neighbour.getRow() > -1 && neighbour.getRow() < Node.totalRows &&
+							neighbour.getColumn() > -1 && neighbour.getColumn() < Node.totalColumns &&
+							!distanceMap.containsKey(neighbour) &&
+							!frontierHash.contains(neighbour)) {
+						frontier.add(neighbour);
+						frontierHash.add(neighbour);
+					}
+				}
+			}
+			Node.goalDistance.put(goal, distanceMap);
 		}
-	};
+		
+		/* DEBUGGING
+		for (Goal goal : Node.getGoalsByCoordinate().values()) {
+			System.err.println(goal.getLetter() + "\n\n");
+			
+			for (int i=0; i<Node.totalRows; i++) {
+				for (int j=0; j<Node.totalColumns; j++) {
+					
+					Integer distance = Node.goalDistance.get(goal).get(new Coordinate(i, j));
+					if (distance == null) {
+						if (Node.walls.get(new Coordinate(i, j)) != null) {
+							System.err.print("   X|");
+						} else {
+							System.err.print("    |");
+						}
+					} else {
+						System.err.format("%4d|", distance);
+					}
+				}
+				System.err.println();
+			}
+			
+			System.err.println("\n\n=====================\n\n");
+		}
+		
+		System.exit(0);
+		*/
+		
+	}
 	
 	public HashMap<Coordinate, Box> getBoxesByCoordinate() {
         return boxesByCoordinate;
@@ -73,14 +123,10 @@ public class Node {
         return boxesByID;
     }
 
-	public PriorityQueue<Box> getEasiestBoxes(){
-		return easiestBoxes;
-	}
 
     public void addBox(Box box) {
         this.boxesByCoordinate.put(box.getCoordinate(), box);
         this.boxesByID.put(box.getLetter(), box);
-		this.easiestBoxes.offer(box);
     }
     
     public static HashMap<Coordinate, Goal> getGoalsByCoordinate() {
@@ -113,14 +159,16 @@ public class Node {
 	}
 
 	public boolean isGoalState() {
-		for (Coordinate key : Node.goalsByCoordinate.keySet()) {
-			Goal goal = Node.goalsByCoordinate.get(key);
-			Box box = boxesByCoordinate.get(key);
-			if (box == null || Character.toLowerCase(box.getLetter()) != goal.getLetter()) {
-				return false;
+		for(Goal goal : Node.getGoalsByCoordinate().values()){
+			if(goal.isCurrentMainGoal()){
+				Box box = boxesByCoordinate.get(goal.getCoordinate());
+				if(box != null && box.getLetter() == Character.toUpperCase(goal.getLetter())){
+					box.setInFinalPosition(true);
+					return true;
+				}
 			}
 		}
-		return true;
+		return false;
 	}
 
 	public static boolean isBoxInTargetGoalCell(Box box){
@@ -131,6 +179,54 @@ public class Node {
 		}
 		return false;
 	}
+
+	public static void setGoalsPriority(){
+		for(Goal goal : Node.getGoalsByCoordinate().values()){
+			//Goal priority is initialized as 0 so if it is higher we can assume that the priority has already been set.
+			if(goal.getPriority() < 1){
+				goal.setPriority(setSingleGoalPriority(goal));
+			}
+		}
+	}
+
+	//Function used to recursively set goal priority
+	public static int setSingleGoalPriority(Goal goal){
+		//Get coordinates for all adjacent cells, and put them in list
+		Coordinate nCord = new Coordinate(goal.getCoordinate().getRow() - 1,goal.getCoordinate().getColumn());
+		Coordinate wCord = new Coordinate(goal.getCoordinate().getRow(), goal.getCoordinate().getColumn() -1 );
+		Coordinate sCord = new Coordinate(goal.getCoordinate().getRow() +1, goal.getCoordinate().getColumn());
+		Coordinate eCord = new Coordinate(goal.getCoordinate().getRow(), goal.getCoordinate().getColumn() +1);
+		ArrayList<Coordinate> newCords = new ArrayList<>();
+		newCords.add(nCord);
+		newCords.add(wCord);
+		newCords.add(sCord);
+		newCords.add(eCord);
+		int returnVal = Integer.MAX_VALUE;
+		for( Coordinate cord : newCords){
+			//The goal is next to a "free" cell meaning that it has neither a wall or another goal cell. Base case for recursive function
+			if(Node.walls.get(cord) == null && Node.getGoalsByCoordinate().get(cord) == null){
+				//Need to also call the setter here in case this is a recursive call of the function.
+				goal.setPriority(1);
+				return 1;
+			}
+			//The goal cell is next another goal cell in this direction
+			else if(Node.getGoalsByCoordinate().get(cord) != null){
+				Goal target = Node.getGoalsByCoordinate().get(cord);
+				//Goal priority is initialized as 0 so if it is higher we can assume that the priority has already been set.
+				if(target.getPriority() < 1) {
+					//If priority has not been set, call this function recursively for the adjacent goal cell and add 1.
+					goal.setPriority(setSingleGoalPriority(target) + 1);
+				} else {
+					//else just get the priority and add 1
+					goal.setPriority(target.getPriority() + 1);
+				}
+				//Compare the priority to the priorities found in other directions. Note that a wall will not be able to set the returnVal.
+				returnVal = goal.getPriority() < returnVal ? goal.getPriority() : returnVal;
+			}
+		}
+		return returnVal;
+	}
+
 
 	public ArrayList<Node> getExpandedNodes() {
 		ArrayList<Node> expandedNodes = new ArrayList<Node>(Command.every.length);
@@ -211,14 +307,15 @@ public class Node {
 	}
 
 	private boolean boxAt(int row, int col) {
-		return this.boxesByCoordinate.get(new Coordinate(row, col)) != null;
+		Box box = this.boxesByCoordinate.get(new Coordinate(row, col));
+		return box != null && !box.isInFinalPosition();
 	}
 
-	private int dirToRowChange(dir d) { 
+	public int dirToRowChange(dir d) {
 		return (d == dir.S ? 1 : (d == dir.N ? -1 : 0)); // South is down one row (1), north is up one row (-1)
 	}
 
-	private int dirToColChange(dir d) {
+	public int dirToColChange(dir d) {
 		return (d == dir.E ? 1 : (d == dir.W ? -1 : 0)); // East is left one column (1), west is right one column (-1)
 	}
 
@@ -227,7 +324,6 @@ public class Node {
 		for (Coordinate key : this.boxesByCoordinate.keySet()) {
 			copy.boxesByCoordinate.put(key, this.boxesByCoordinate.get(key));
 			copy.boxesByID.put(this.boxesByCoordinate.get(key).getLetter(), this.boxesByCoordinate.get(key));
-			copy.easiestBoxes.offer(this.boxesByCoordinate.get(key));
 		}
 		for (Agent agent : this.agents) {
 			copy.agents.add(agent.clone());
@@ -244,23 +340,6 @@ public class Node {
 		}
 		return plan;
 	}
-	
-	@Override
-    public boolean equals(Object obj) {
-    	if (this == obj)
-    		return true;
-    	if (obj == null)
-    		return false;
-    	if (this.getClass() != obj.getClass())
-    		return false;
-    	Node other = (Node) obj;
-    	if (this.parent != other.parent || this.action != other.action
-    			|| !this.agents.equals(other.agents)
-    			|| !this.boxesByCoordinate.equals(other.getBoxesByCoordinate())
-    			|| !this.boxesByID.equals(other.getBoxesByID()))
-    		return false;
-    	return true;
-    }
 
 	public void printState() {
 		StringBuilder builder = new StringBuilder();
@@ -281,11 +360,11 @@ public class Node {
 			builder.append('\n');
 		}
 		System.err.print(builder.toString());
-		try {
+		/*try {
 			System.in.read();
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
+		}*/
 	}
 
 	public int getF() {
@@ -300,19 +379,21 @@ public class Node {
 		return "" + this.f;
 	}
 
-	/* TODO: refactor - if needed
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + agentCol;
-		result = prime * result + agentRow;
-		result = prime * result + Arrays.deepHashCode(boxes.toArray());
+		for( Agent agent : agents){
+			result = prime * result + agent.hashCode();
+		}
+		/*for(Box box : boxesByCoordinate.values()){
+			result = prime * result + box.hashCode();
+		}*/
+		result = prime * result + boxesByCoordinate.hashCode();
 		return result;
 	}
-	*/
 
-	/* TODO: refactor - if needed
+
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -322,19 +403,27 @@ public class Node {
 		if (getClass() != obj.getClass())
 			return false;
 		Node other = (Node) obj;
-		if (agentCol != other.agentCol)
-			return false;
-		if (agentRow != other.agentRow)
-			return false;
-		if (!Arrays.deepEquals(boxes.toArray(), other.boxes.toArray())) {
+		for(int i = 0; i < agents.size(); i++){
+			if(!agents.get(i).equals(other.agents.get(i))){
+				return false;
+			}
+		}
+		if(!boxesByCoordinate.equals(other.getBoxesByCoordinate())){
 			return false;
 		}
+		/*for(Box box : boxesByCoordinate.values()){
+			Coordinate boxCord = box.getCoordinate();
+			Box otherBox = other.boxesByCoordinate.get(boxCord);
+			if(!box.equals(otherBox)){
+				return false;
+			}
+		}*/
 		return true;
 	}
-	*/
 
-	/* TODO: refactor - if needed
-	public String toString() {
+
+	// TODO: refactor - if needed
+	/*public String toString() {
 		StringBuilder s = new StringBuilder();
 		for (int row = 0; row < this.boxes.size(); row++) {
 			if (!Node.walls.get(row).get(0)) {
@@ -353,7 +442,7 @@ public class Node {
 			s.append("\n");
 		}
 		return s.toString();
-	}
-	*/
+	}*/
+
 
 }

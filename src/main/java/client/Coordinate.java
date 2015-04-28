@@ -1,5 +1,7 @@
 package client;
 
+import java.util.LinkedList;
+
 public class Coordinate {
     private int row;
     private int column;
@@ -28,6 +30,15 @@ public class Coordinate {
     	return this.row + ", " + this.column;
     }
     
+    public LinkedList<Coordinate> get4VicinityCoordinates() {
+    	LinkedList<Coordinate> neighbours = new LinkedList<Coordinate>();
+    	neighbours.add(new Coordinate(this.row-1, this.column));
+    	neighbours.add(new Coordinate(this.row+1, this.column));
+    	neighbours.add(new Coordinate(this.row, this.column-1));
+    	neighbours.add(new Coordinate(this.row, this.column+1));
+    	return neighbours;
+    }
+    
     @Override
     public int hashCode() {
     	return 3571 + this.row + this.column;
@@ -46,4 +57,6 @@ public class Coordinate {
     		return false;
     	return true;
     }
+
+
 }
