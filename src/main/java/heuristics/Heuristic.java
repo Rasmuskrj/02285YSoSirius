@@ -1,6 +1,7 @@
 package heuristics;
 
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.PriorityQueue;
 
 import client.*;
@@ -100,7 +101,9 @@ public abstract class Heuristic implements Comparator< Node > {
 			Box targetBox = null;
 			for(Box box : n.getBoxesByCoordinate().values()){
 				if(!box.isInFinalPosition() && box.getLetter() == Character.toUpperCase(currentSubGoal.getLetter())){
-					int dist = Math.abs(box.getCoordinate().getColumn() - currentSubGoal.getCoordinate().getColumn()) + Math.abs(box.getCoordinate().getRow() - currentSubGoal.getCoordinate().getRow());
+					HashMap<Coordinate, Integer> goalMap = Node.goalDistance.get(currentSubGoal);
+					int dist = goalMap.get(box.getCoordinate());
+					//int dist = Math.abs(box.getCoordinate().getColumn() - currentSubGoal.getCoordinate().getColumn()) + Math.abs(box.getCoordinate().getRow() - currentSubGoal.getCoordinate().getRow());
 					if(dist < boxDistance){
 						targetBox = box;
 						boxDistance = dist;

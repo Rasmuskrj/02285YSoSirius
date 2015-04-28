@@ -3,9 +3,10 @@ package client;
 import java.io.IOException;
 import java.util.*;
 
+import com.sun.org.apache.bcel.internal.generic.NEW;
+
 import client.Command.dir;
 import client.Command.type;
-import sun.plugin.dom.core.CoreConstants;
 
 public class Node {
 
@@ -14,6 +15,9 @@ public class Node {
     private static HashMap<Character, Goal> goalsByID = new HashMap<Character, Goal>();
     private HashMap<Coordinate, Box> boxesByCoordinate = new HashMap<Coordinate, Box>();
     private HashMap<Character, Box> boxesByID = new HashMap<Character, Box>();
+	private PriorityQueue<Box> easiestBoxes;
+	public static HashMap<Goal, HashMap<Coordinate, Integer>> goalDistance = 
+				new HashMap<Goal, HashMap<Coordinate, Integer>>();
 
 	public Agent thisAgent = null;
 	//public int agentRow;
@@ -39,6 +43,77 @@ public class Node {
 		} else {
 			g = parent.g() + 1;
 		}
+	}
+	
+	public static void computeGoalDistance() {
+		for (Goal goal : Node.getGoalsByCoordinate().values()) {
+			HashMap<Coordinate, Integer> distanceMap = new HashMap<Coordinate, Integer>();
+			LinkedList<Coordinate> frontier = new LinkedList<Coordinate>();
+			HashSet<Coordinate> frontierHash = new HashSet<Coordinate>();
+			// initially put only the goal in the distance map
+			distanceMap.put(goal.getCoordinate(), 0);
+			// and the goal's neighbours (4-vicinity) in the frontier
+			for (Coordinate coordinate : goal.getCoordinate().get4VicinityCoordinates()) {
+				if (Node.walls.get(coordinate) == null && 
+						coordinate.getRow() > -1 && coordinate.getRow() < Node.totalRows &&
+						coordinate.getColumn() > -1 && coordinate.getColumn() < Node.totalColumns) {
+					frontier.add(coordinate);
+					frontierHash.add(coordinate);
+				}
+			}
+			// then in each loop move elements in frontier to distanceMap (take min distance)
+			// and add their neighbours to frontier
+			while (!frontier.isEmpty()) {
+				Coordinate coordinate = frontier.poll();
+				frontierHash.remove(coordinate);
+				Integer minDistance = Integer.MAX_VALUE;
+				for (Coordinate neighbour : coordinate.get4VicinityCoordinates()) {
+					if (distanceMap.containsKey(neighbour) && distanceMap.get(neighbour) < minDistance) {
+						minDistance = distanceMap.get(neighbour);
+					}
+				}
+				distanceMap.put(coordinate, minDistance+1);
+				for (Coordinate neighbour : coordinate.get4VicinityCoordinates()) {
+					if (Node.walls.get(neighbour) == null && 
+							neighbour.getRow() > -1 && neighbour.getRow() < Node.totalRows &&
+							neighbour.getColumn() > -1 && neighbour.getColumn() < Node.totalColumns &&
+							!distanceMap.containsKey(neighbour) &&
+							!frontierHash.contains(neighbour)) {
+						frontier.add(neighbour);
+						frontierHash.add(neighbour);
+					}
+				}
+			}
+			Node.goalDistance.put(goal, distanceMap);
+		}
+		
+		/* DEBUGGING
+		for (Goal goal : Node.getGoalsByCoordinate().values()) {
+			System.err.println(goal.getLetter() + "\n\n");
+			
+			for (int i=0; i<Node.totalRows; i++) {
+				for (int j=0; j<Node.totalColumns; j++) {
+					
+					Integer distance = Node.goalDistance.get(goal).get(new Coordinate(i, j));
+					if (distance == null) {
+						if (Node.walls.get(new Coordinate(i, j)) != null) {
+							System.err.print("   X|");
+						} else {
+							System.err.print("    |");
+						}
+					} else {
+						System.err.format("%4d|", distance);
+					}
+				}
+				System.err.println();
+			}
+			
+			System.err.println("\n\n=====================\n\n");
+		}
+		
+		System.exit(0);
+		*/
+		
 	}
 	
 	public HashMap<Coordinate, Box> getBoxesByCoordinate() {

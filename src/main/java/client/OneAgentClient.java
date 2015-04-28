@@ -23,6 +23,7 @@ public class OneAgentClient {
 
 	public OneAgentClient() throws IOException {
 		readMap();
+		Node.computeGoalDistance();
 		findSubgoals();
 
 		Agent agent = initialState.getAgents().get(0);
