@@ -271,6 +271,7 @@ public class Node {
 		for (Agent agent : this.agents) {
 			copy.agents.add(agent.clone());
 		}
+		copy.thisAgent = this.thisAgent;
 		return copy;
 	}
 

@@ -18,7 +18,7 @@ public class MultiAgentClient {
     private ArrayList<Agent> agents = new ArrayList<>();
 
     // uncomment two lines below if testing without server and comment the third line
-    FileReader fr = new FileReader("levels/SAsimple1.lvl");
+    FileReader fr = new FileReader("levels/MAsimple1.lvl");
     private BufferedReader in = new BufferedReader(fr);
     //private BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 
@@ -78,7 +78,9 @@ public class MultiAgentClient {
     }
 
     private void assignSubgoals() {
-        for(Goal subGoal : subGoals){
+        Iterator iter = subGoals.iterator();
+        while (iter.hasNext()){
+            Goal subGoal = (Goal)iter.next();
             for(Agent agent : agents){
                 boolean goalAssigned = false;
                 for(Box box : initialState.getBoxesByCoordinate().values()){
