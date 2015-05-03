@@ -1,7 +1,7 @@
 package client;
 
 /**
- * Created by RasmusKrøyer on 14-04-2015.
+ * Created by RasmusKrï¿½yer on 14-04-2015.
  */
 
 import heuristics.AStarHeuristic;
@@ -18,14 +18,15 @@ public class MultiAgentClient {
     private ArrayList<Agent> agents = new ArrayList<>();
 
     // uncomment two lines below if testing without server and comment the third line
-    FileReader fr = new FileReader("levels/MAsimple1.lvl");
-    private BufferedReader in = new BufferedReader(fr);
-    //private BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+    //FileReader fr = new FileReader("levels/MAsimple1.lvl");
+    //private BufferedReader in = new BufferedReader(fr);
+    private BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 
     public int actionCount = 0;
 
     public MultiAgentClient() throws IOException {
         readMap();
+        Node.computeGoalDistance();
         findSubgoals();
         initialState.printState();
 
@@ -84,7 +85,7 @@ public class MultiAgentClient {
             for(Agent agent : agents){
                 boolean goalAssigned = false;
                 for(Box box : initialState.getBoxesByCoordinate().values()){
-                    if(box.getColor().equals(agent.getColor())){
+                    if(box.getColor().equals(agent.getColor()) && box.getLetter() == Character.toUpperCase(subGoal.getLetter())){
                         agent.setCurrentSubGoal(subGoal);
                         goalAssigned = true;
                         break;
@@ -170,10 +171,23 @@ public class MultiAgentClient {
 
     public boolean update() throws IOException {
 
-        String jointAction = "";
+        String jointAction = "[";
+        int noActions = 0;
 
-        for (int i = 0; i < agents.size() - 1; i++)
-        	jointAction += agents.get(i).act(actionCount) + ",";
+        for (int i = 0; i < agents.size(); i++) {
+            jointAction += agents.get(i).multiAct(actionCount);
+            if(i < agents.size() - 1){
+                jointAction += ",";
+            }
+            if(agents.get(i).multiAct(actionCount) == "NoOp"){
+                noActions++;
+            }
+        }
+        jointAction += "]";
+        if(noActions == agents.size()){
+            return false;
+        }
+        System.err.println("Sending command: " + jointAction);
         /*if(initialState.agents.get(initialState.agents.size() - 1).act(actionCount).equals("NoOp")){
             return false;
         }*/
@@ -201,7 +215,7 @@ public class MultiAgentClient {
         System.err.println("Hello from MultiAgentClient. I am sending this using the error outputstream");
         try {
             MultiAgentClient client = new MultiAgentClient();
-            //while (client.update());
+            while (client.update());
 
         } catch (IOException e) {
             System.err.println(e.getMessage());

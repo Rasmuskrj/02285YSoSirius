@@ -9,7 +9,7 @@ public class Agent {
 	private Coordinate coordinate;
 	private Strategy strategy;
 	private LinkedList<Node> solution;
-	private Goal CurrentSubGoal = null;
+	private Goal currentSubGoal = null;
 
 	public Agent(char id, String color, Coordinate coordinate) {
 		this.id = id;
@@ -18,9 +18,25 @@ public class Agent {
 		this.solution = new LinkedList<>();
 	}
 
+	public Agent(char id, String color, Coordinate coordinate, Goal currentSubGoal){
+		this.id = id;
+		this.color = color;
+		this.coordinate = coordinate;
+		this.currentSubGoal = currentSubGoal;
+		this.solution = new LinkedList<>();
+	}
+
 	public String act(int i) {
 		if (solution.size() > i) {
 			return solution.get(i).action.toActionString();
+		} else {
+			return "NoOp";
+		}
+	}
+
+	public String multiAct(int i){
+		if (solution.size() > i) {
+			return solution.get(i).action.toString();
 		} else {
 			return "NoOp";
 		}
@@ -71,17 +87,17 @@ public class Agent {
 	}
 
 	public Goal getCurrentSubGoal() {
-		return CurrentSubGoal;
+		return currentSubGoal;
 	}
 
 	public void setCurrentSubGoal(Goal currentSubGoal) {
-		CurrentSubGoal = currentSubGoal;
+		this.currentSubGoal = currentSubGoal;
 	}
 
 	@Override
 	public Agent clone() {
 		Agent newAgent = new Agent(this.id, this.color, 
-					new Coordinate(this.coordinate.getRow(), this.coordinate.getColumn()));
+					new Coordinate(this.coordinate.getRow(), this.coordinate.getColumn()), this.currentSubGoal);
 		return newAgent;
 	}
 

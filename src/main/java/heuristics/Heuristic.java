@@ -112,13 +112,13 @@ public abstract class Heuristic implements Comparator< Node > {
 			}
 			if(targetBox != null){
 				//calculate heuristic. There is extra weight in moving the box closer to its goal.
-				ret = (10 * boxDistance) + Math.abs(n.agents.get(0).getCoordinate().getRow() - targetBox.getCoordinate().getRow()) +
-						Math.abs(n.agents.get(0).getCoordinate().getColumn() - targetBox.getCoordinate().getColumn());
+				ret = (10 * boxDistance) + Math.abs(n.thisAgent.getCoordinate().getRow() - targetBox.getCoordinate().getRow()) +
+						Math.abs(n.thisAgent.getCoordinate().getColumn() - targetBox.getCoordinate().getColumn());
 				Command com = n.action;
 				if(com != null && !(com.actType == Command.type.Move)){
 					//if the agent is moving boxes that is not the target box, the heuristic is worsened.
-					int boxRow = n.agents.get(0).getCoordinate().getRow() + n.dirToRowChange(com.dir2);
-					int boxCol = n.agents.get(0).getCoordinate().getColumn() + n.dirToColChange(com.dir2);
+					int boxRow = n.thisAgent.getCoordinate().getRow() + n.dirToRowChange(com.dir2);
+					int boxCol = n.thisAgent.getCoordinate().getColumn() + n.dirToColChange(com.dir2);
 					if(!(boxRow == targetBox.getCoordinate().getRow() && boxCol == targetBox.getCoordinate().getColumn() )){
 						ret += 10;
 					}
