@@ -1,11 +1,11 @@
 package client;
 
 /**
- * Created by RasmusKr�yer on 14-04-2015.
+ * Created by RasmusKrøyer on 14-04-2015.
  */
 
 import heuristics.AStarHeuristic;
-import heuristics.GreedyHeuristic;
+import client.Agent;
 
 import java.io.*;
 import java.util.*;
@@ -18,9 +18,9 @@ public class MultiAgentClient {
     private ArrayList<Agent> agents = new ArrayList<>();
 
     // uncomment two lines below if testing without server and comment the third line
-    //FileReader fr = new FileReader("levels/MAsimple1.lvl");
-    //private BufferedReader in = new BufferedReader(fr);
-    private BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+    FileReader fr = new FileReader("levels/MAsimple1.lvl");
+    private BufferedReader in = new BufferedReader(fr);
+    //private BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 
     public int actionCount = 0;
 
@@ -65,6 +65,7 @@ public class MultiAgentClient {
 
         // TODO: this can be removed when no more debugging will be done, ever
 
+        /*
         System.err.println("Solution found: ");
         int count = 0;
         String output = initialState.agents.get(initialState.agents.size() - 1).act(count);
@@ -74,12 +75,12 @@ public class MultiAgentClient {
             output = initialState.agents.get(initialState.agents.size() - 1).act(count);
         }
         System.err.println();
-
+		*/
 
     }
 
     private void assignSubgoals() {
-        Iterator iter = subGoals.iterator();
+        Iterator<Goal> iter = subGoals.iterator();
         while (iter.hasNext()){
             Goal subGoal = (Goal)iter.next();
             for(Agent agent : agents){
@@ -175,11 +176,11 @@ public class MultiAgentClient {
         int noActions = 0;
 
         for (int i = 0; i < agents.size(); i++) {
-            jointAction += agents.get(i).multiAct(actionCount);
+            jointAction += agents.get(i).multiAct();
             if(i < agents.size() - 1){
                 jointAction += ",";
             }
-            if(agents.get(i).multiAct(actionCount) == "NoOp"){
+            if(agents.get(i).multiAct() == "NoOp"){
                 noActions++;
             }
         }
@@ -203,9 +204,19 @@ public class MultiAgentClient {
         // Disregard these for now, but read or the server stalls when its output buffer gets filled!
         String percepts = in.readLine();
         System.err.println(percepts);
+        
         if (percepts == null)
             return false;
 
+        /*
+        percepts.replace("[", "").replace("]", "");
+        String[] perceptsArray = percepts.split(", ");
+        
+        for (int i = 0; i < agents.size(); i++) {
+            agents.get(i).setLastPercept(Boolean.parseBoolean(perceptsArray[i]));
+        }
+        */
+        
         return true;
     }
 
