@@ -37,8 +37,12 @@ public class OneAgentClient {
 			agent.appendSolution(plan);
 			subgoal.setCurrentMainGoal(false);
 			while(update());
+			/*
 			initialState = agent.getSolution().getLast();
 			initialState.agents.get(0).setSolution(agent.getSolution());
+			*/
+			initialState = agent.getSolutionList().getLast().getLast();
+			initialState.agents.get(0).setSolutionList(agent.getSolutionList());
 			initialState.parent = null;
 		}
 		//TODO: Commented out for loop while working on single agent
@@ -53,11 +57,11 @@ public class OneAgentClient {
 		
 		System.err.println("Solution found: ");
 		int count = 0;
-		String output = initialState.agents.get(initialState.agents.size() - 1).act(count);
+		String output = initialState.agents.get(initialState.agents.size() - 1).act();
 		while (!output.equals("NoOp")) {
 			System.err.print(output + " ");
 			count++;
-			output = initialState.agents.get(initialState.agents.size() - 1).act(count);
+			output = initialState.agents.get(initialState.agents.size() - 1).act();
 		}
 		System.err.println();
 		
@@ -138,11 +142,11 @@ public class OneAgentClient {
 
 		//for (int i = 0; i < initialState.agents.size() - 1; i++)
 		//	jointAction += initialState.agents.get(i).act(actionCount) + ",";
-		if(initialState.agents.get(initialState.agents.size() - 1).act(actionCount).equals("NoOp")){
+		if(initialState.agents.get(initialState.agents.size() - 1).act().equals("NoOp")){
 			return false;
 		}
 		
-		jointAction += initialState.agents.get(initialState.agents.size() - 1).act(actionCount);
+		jointAction += initialState.agents.get(initialState.agents.size() - 1).act();
 		
 		actionCount++;
 		

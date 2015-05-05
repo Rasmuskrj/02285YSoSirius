@@ -1,6 +1,7 @@
 package client;
 
 import java.util.LinkedList;
+import java.util.PriorityQueue;
 
 public class Agent {
 	// We don't actually use these for Randomly Walking Around
@@ -8,21 +9,72 @@ public class Agent {
 	private String color;
 	private Coordinate coordinate;
 	private Strategy strategy;
-	private LinkedList<Node> solution;
+	private LinkedList<LinkedList<Node>> solutionList;
+	
+	//private LinkedList<Node> solution;
+	private Goal currentSubGoal = null;
+	private boolean lastPercept = true;
 
 	public Agent(char id, String color, Coordinate coordinate) {
 		this.id = id;
 		this.color = color;
 		this.coordinate = coordinate;
-		this.solution = new LinkedList<>();
+		//this.solution = new LinkedList<>();
+		this.solutionList = new LinkedList<LinkedList<Node>>();
 	}
 
-	public String act(int i) {
+	public Agent(char id, String color, Coordinate coordinate, Goal currentSubGoal){
+		this.id = id;
+		this.color = color;
+		this.coordinate = coordinate;
+		this.currentSubGoal = currentSubGoal;
+		//this.solution = new LinkedList<>();
+		this.solutionList = new LinkedList<LinkedList<Node>>();
+	}
+
+	
+	public String act() {
+		
+		if (solutionList.size() > 0 && solutionList.getFirst().size() > 0) {
+			Node next = solutionList.getFirst().getFirst();
+			solutionList.getFirst().removeFirst();
+			if (solutionList.getFirst().size() == 0) {
+				solutionList.removeFirst();
+			}
+			return next.action.toActionString();
+		} else {
+			return "NoOp";
+		}
+		
+		/*
+		if (solutionList.peek().size() > 0) {
+			Node next = solutionList.peek().getFirst();
+			solutionList.peek().removeFirst();
+		}
+		
 		if (solution.size() > i) {
 			return solution.get(i).action.toActionString();
 		} else {
 			return "NoOp";
 		}
+		*/
+	}
+
+	public String multiAct(){
+		if (solutionList.size() > 0 && solutionList.peek().size() > 0) {
+			Node next = solutionList.peek().getFirst();
+			solutionList.peek().removeFirst();
+			return next.action.toString();
+		} else {
+			return "NoOp";
+		}
+		/*
+		if (solution.size() > i) {
+			return solution.get(i).action.toString();
+		} else {
+			return "NoOp";
+		}
+		*/
 	}
 	
 	public char getId() {
@@ -31,6 +83,14 @@ public class Agent {
 
 	public void setId(char id) {
 		this.id = id;
+	}
+	
+	public boolean isLastPercept() {
+		return lastPercept;
+	}
+	
+	public void setLastPercept(boolean lastPercept) {
+		this.lastPercept = lastPercept;
 	}
 
 	public String getColor() {
@@ -57,6 +117,23 @@ public class Agent {
 		this.strategy = strategy;
 	}
 
+	public LinkedList<LinkedList<Node>> getSolutionList() {
+		return solutionList;
+	}
+	
+	public void setSolutionList(LinkedList<LinkedList<Node>> solutionList) {
+		this.solutionList = solutionList;
+	}
+	
+	public void appendSolution(LinkedList<Node> partialSolution) {
+		this.solutionList.add(partialSolution); // equivalent to addLast()
+	}
+	
+	public void appendPrioritySolution(LinkedList<Node> partialSolution) {
+		this.solutionList.addFirst(partialSolution);
+	}
+	
+	/*
 	public LinkedList<Node> getSolution() {
 		return solution;
 	}
@@ -68,11 +145,19 @@ public class Agent {
 	public void appendSolution(LinkedList<Node> partialSolution){
 		this.solution.addAll(partialSolution);
 	}
-	
+	*/
+	public Goal getCurrentSubGoal() {
+		return currentSubGoal;
+	}
+
+	public void setCurrentSubGoal(Goal currentSubGoal) {
+		this.currentSubGoal = currentSubGoal;
+	}
+
 	@Override
 	public Agent clone() {
 		Agent newAgent = new Agent(this.id, this.color, 
-					new Coordinate(this.coordinate.getRow(), this.coordinate.getColumn()));
+					new Coordinate(this.coordinate.getRow(), this.coordinate.getColumn()), this.currentSubGoal);
 		return newAgent;
 	}
 

@@ -19,6 +19,7 @@ public class Node {
 	public static HashMap<Goal, HashMap<Coordinate, Integer>> goalDistance = 
 				new HashMap<Goal, HashMap<Coordinate, Integer>>();
 
+	public Agent thisAgent = null;
 	//public int agentRow;
 	//public int agentCol;
     
@@ -159,7 +160,14 @@ public class Node {
 	}
 
 	public boolean isGoalState() {
-		for(Goal goal : Node.getGoalsByCoordinate().values()){
+		Goal goal = thisAgent.getCurrentSubGoal();
+		Box box = boxesByCoordinate.get(goal.getCoordinate());
+		if(box != null && box.getLetter() == Character.toUpperCase(goal.getLetter())){
+			box.setInFinalPosition(true);
+			return true;
+		}
+
+		/*for(Goal goal : Node.getGoalsByCoordinate().values()){
 			if(goal.isCurrentMainGoal()){
 				Box box = boxesByCoordinate.get(goal.getCoordinate());
 				if(box != null && box.getLetter() == Character.toUpperCase(goal.getLetter())){
@@ -167,7 +175,7 @@ public class Node {
 					return true;
 				}
 			}
-		}
+		}*/
 		return false;
 	}
 
@@ -232,16 +240,16 @@ public class Node {
 		ArrayList<Node> expandedNodes = new ArrayList<Node>(Command.every.length);
 		for (Command c : Command.every) {
 			// Determine applicability of action
-			int newAgentRow = this.agents.get(0).getCoordinate().getRow() + dirToRowChange(c.dir1);
-			int newAgentCol = this.agents.get(0).getCoordinate().getColumn() + dirToColChange(c.dir1);
+			int newAgentRow = thisAgent.getCoordinate().getRow() + dirToRowChange(c.dir1);
+			int newAgentCol = thisAgent.getCoordinate().getColumn() + dirToColChange(c.dir1);
 
 			if (c.actType == type.Move) {
 				// Check if there's a wall or box on the cell to which the agent is moving
 				if (cellIsFree(newAgentRow, newAgentCol)) {
 					Node n = this.childNode();
 					n.action = c;
-					n.agents.get(0).getCoordinate().setRow(newAgentRow);
-					n.agents.get(0).getCoordinate().setColumn(newAgentCol);
+					n.thisAgent.getCoordinate().setRow(newAgentRow);
+					n.thisAgent.getCoordinate().setColumn(newAgentCol);
 					expandedNodes.add(n);
 				}
 			} else if (c.actType == type.Push) {
@@ -253,8 +261,8 @@ public class Node {
 					if (cellIsFree(newBoxRow, newBoxCol)) {
 						Node n = this.childNode();
 						n.action = c;
-						n.agents.get(0).getCoordinate().setRow(newAgentRow);
-						n.agents.get(0).getCoordinate().setColumn(newAgentCol);
+						n.thisAgent.getCoordinate().setRow(newAgentRow);
+						n.thisAgent.getCoordinate().setColumn(newAgentCol);
 						// TODO: eventually refactor with clone()
 						Box boxToMove = this.boxesByCoordinate.get(
 											new Coordinate(newAgentRow, newAgentCol));
@@ -271,8 +279,8 @@ public class Node {
 			} else if (c.actType == type.Pull) {
 				// Cell is free where agent is going
 				if (cellIsFree(newAgentRow, newAgentCol)) {
-					int boxRow = this.agents.get(0).getCoordinate().getRow() + dirToRowChange(c.dir2);
-					int boxCol = this.agents.get(0).getCoordinate().getColumn() + dirToColChange(c.dir2);
+					int boxRow = this.thisAgent.getCoordinate().getRow() + dirToRowChange(c.dir2);
+					int boxCol = this.thisAgent.getCoordinate().getColumn() + dirToColChange(c.dir2);
 					// .. and there's a box in "dir2" of the agent
 					if (boxAt(boxRow, boxCol)) {
 						Node n = this.childNode();
@@ -281,18 +289,18 @@ public class Node {
 						Box boxToMove = this.boxesByCoordinate.get(
 											new Coordinate(boxRow, boxCol));
 						Box boxToMoveCopy = new Box(boxToMove.getLetter(), boxToMove.getColor(),
-								new Coordinate(this.agents.get(0).getCoordinate().getRow(), 
-										this.agents.get(0).getCoordinate().getColumn()));
-						//Coordinate newBoxCoordinate = new Coordinate(this.agents.get(0).getCoordinate().getRow(), 
-						//					this.agents.get(0).getCoordinate().getColumn()); 
+								new Coordinate(this.thisAgent.getCoordinate().getRow(),
+										this.thisAgent.getCoordinate().getColumn()));
+						//Coordinate newBoxCoordinate = new Coordinate(this.thisAgent.getCoordinate().getRow(),
+						//					this.thisAgent.getCoordinate().getColumn());
 						//boxToMove.setCoordinate(newBoxCoordinate);
-						n.boxesByCoordinate.put(new Coordinate(this.agents.get(0).getCoordinate().getRow(), 
-								this.agents.get(0).getCoordinate().getColumn()), boxToMoveCopy);
+						n.boxesByCoordinate.put(new Coordinate(this.thisAgent.getCoordinate().getRow(),
+								this.thisAgent.getCoordinate().getColumn()), boxToMoveCopy);
 						n.boxesByCoordinate.remove(new Coordinate(boxRow, boxCol));
 						n.boxesByID.remove(boxToMoveCopy.getLetter());
 						n.boxesByID.put(boxToMoveCopy.getLetter(), boxToMoveCopy);
-						n.agents.get(0).getCoordinate().setRow(newAgentRow);
-						n.agents.get(0).getCoordinate().setColumn(newAgentCol);
+						n.thisAgent.getCoordinate().setRow(newAgentRow);
+						n.thisAgent.getCoordinate().setColumn(newAgentCol);
 						expandedNodes.add(n);
 					}
 				}
@@ -319,6 +327,16 @@ public class Node {
 		return (d == dir.E ? 1 : (d == dir.W ? -1 : 0)); // East is left one column (1), west is right one column (-1)
 	}
 
+	public void setParent(Node parent){
+		if(parent == null){
+			this.parent = null;
+			g = 0;
+		} else {
+			this.parent = parent;
+			this.g = parent.g;
+		}
+	}
+
 	private Node childNode() {
 		Node copy = new Node(this);
 		for (Coordinate key : this.boxesByCoordinate.keySet()) {
@@ -326,6 +344,20 @@ public class Node {
 			copy.boxesByID.put(this.boxesByCoordinate.get(key).getLetter(), this.boxesByCoordinate.get(key));
 		}
 		for (Agent agent : this.agents) {
+			copy.agents.add(agent.clone());
+		}
+		copy.thisAgent = this.thisAgent.clone();
+		return copy;
+	}
+
+	public Node getCopy(){
+		Node copy = new Node(this);
+		copy.setParent(parent);
+		for(Coordinate key : this.getBoxesByCoordinate().keySet()) {
+			copy.boxesByCoordinate.put(key, this.boxesByCoordinate.get(key));
+			copy.boxesByID.put(this.boxesByCoordinate.get(key).getLetter(), this.boxesByCoordinate.get(key));
+		}
+		for (Agent agent : this.agents){
 			copy.agents.add(agent.clone());
 		}
 		return copy;
@@ -345,10 +377,16 @@ public class Node {
 		StringBuilder builder = new StringBuilder();
 		for (int i=0; i<Node.totalRows; i++) {
 			for (int j=0; j<Node.totalColumns; j++) {
+				Agent cellAgent = null;
+				for(Agent agent : agents){
+					if(agent.getCoordinate().equals(new Coordinate(i,j))){
+						cellAgent = agent;
+					}
+				}
 				if (Node.walls.get(new Coordinate(i, j)) != null) {
 					builder.append('+');
-				} else if (this.agents.get(0).getCoordinate().equals(new Coordinate(i, j))){
-					builder.append(this.agents.get(0).getId());
+				} else if (cellAgent != null){
+					builder.append(cellAgent.getId());
 				} else if (this.boxesByCoordinate.get(new Coordinate(i, j)) != null) {
 					builder.append(this.boxesByCoordinate.get(new Coordinate(i, j)).getLetter());
 				} else if (Node.goalsByCoordinate.get(new Coordinate(i, j)) != null) {
@@ -383,13 +421,14 @@ public class Node {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		for( Agent agent : agents){
+		/*for( Agent agent : agents){
 			result = prime * result + agent.hashCode();
-		}
+		}*/
 		/*for(Box box : boxesByCoordinate.values()){
 			result = prime * result + box.hashCode();
 		}*/
 		result = prime * result + boxesByCoordinate.hashCode();
+		result = prime * result + thisAgent.hashCode();
 		return result;
 	}
 
@@ -403,11 +442,11 @@ public class Node {
 		if (getClass() != obj.getClass())
 			return false;
 		Node other = (Node) obj;
-		for(int i = 0; i < agents.size(); i++){
+		/*for(int i = 0; i < agents.size(); i++){
 			if(!agents.get(i).equals(other.agents.get(i))){
 				return false;
 			}
-		}
+		}*/
 		if(!boxesByCoordinate.equals(other.getBoxesByCoordinate())){
 			return false;
 		}
@@ -418,8 +457,13 @@ public class Node {
 				return false;
 			}
 		}*/
+		if(!thisAgent.equals(other.thisAgent)){
+			return false;
+		}
 		return true;
 	}
+
+
 
 
 	// TODO: refactor - if needed
