@@ -412,6 +412,43 @@ public class Node {
 	public void setF(int f) {
 		this.f = f;
 	}
+
+	public boolean changeState(Command[] commands){
+		for(int i = 0; i < commands.length; i++){
+			if(commands[i] != null) {
+				int newAgentRow = this.agents.get(i).getCoordinate().getRow() + dirToRowChange(commands[i].dir1);
+				int newAgentColumn = this.agents.get(i).getCoordinate().getColumn() + dirToColChange(commands[i].dir1);
+				Coordinate newPos = new Coordinate(newAgentRow, newAgentColumn);
+				if (commands[i].actType == type.Pull) {
+					int boxRow = this.agents.get(i).getCoordinate().getRow() + dirToRowChange(commands[i].dir2);
+					int boxCol = this.agents.get(i).getCoordinate().getColumn() + dirToColChange(commands[i].dir2);
+					if (boxAt(boxRow, boxCol)) {
+						Box pullBox = this.boxesByCoordinate.get(new Coordinate(boxRow, boxCol));
+						pullBox.setCoordinate(this.agents.get(i).getCoordinate());
+						this.agents.get(i).setCoordinate(newPos);
+					} else {
+						System.err.println("Client State corrupted");
+						return false;
+					}
+
+				} else if (commands[i].actType == type.Push) {
+					int newBoxRow = this.agents.get(i).getCoordinate().getRow() + dirToRowChange(commands[i].dir2);
+					int newBoxCol = this.agents.get(i).getCoordinate().getColumn() + dirToColChange(commands[i].dir2);
+					if (boxAt(newPos.getRow(), newPos.getColumn())) {
+						Box pushBox = this.boxesByCoordinate.get(newPos);
+						pushBox.setCoordinate(new Coordinate(newBoxRow, newBoxCol));
+						this.agents.get(i).setCoordinate(newPos);
+					} else {
+						System.err.println("Client state corrupted");
+						return false;
+					}
+				} else {
+					this.agents.get(i).setCoordinate(newPos);
+				}
+			}
+		}
+		return true;
+	}
 	
 	public String toString() {
 		return "" + this.f;

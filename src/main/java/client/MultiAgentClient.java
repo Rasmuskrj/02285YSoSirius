@@ -5,75 +5,93 @@ package client;
  */
 
 import heuristics.AStarHeuristic;
-import heuristics.GreedyHeuristic;
 
 import java.io.*;
 import java.util.*;
 
 public class MultiAgentClient {
     // the client can actually work as a blackboard, I'd think (at least for now)
-    private Node initialState = new Node(null);
+    private Node currentState = new Node(null);
 
     private PriorityQueue<Goal> subGoals;
     private ArrayList<Agent> agents = new ArrayList<>();
+    private String[] latestServerOutput = null;
+    private Command[] latestActionArray = null;
+    private Boolean[] agentErrorState = null;
 
     // uncomment two lines below if testing without server and comment the third line
     //FileReader fr = new FileReader("levels/MAsimple1.lvl");
     //private BufferedReader in = new BufferedReader(fr);
     private BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 
-    public int actionCount = 0;
-
     public MultiAgentClient() throws IOException {
         readMap();
         Node.computeGoalDistance();
         findSubgoals();
-        initialState.printState();
-
+        currentState.printState();
+        latestActionArray = new Command[agents.size()];
+        agentErrorState = new Boolean[agents.size()];
         assignSubgoals();
+        in.readLine();
+        while(!subGoals.isEmpty()) {
+            for (Agent agent : agents) {
+                //TODO: Only replan if needed
+                Node myinitalState = currentState.getCopy();
+                myinitalState.thisAgent = agent;
+                agent.setStrategy(new StrategyBestFirst(new AStarHeuristic(myinitalState)));
+                LinkedList<Node> plan = this.search(agent.getStrategy(), myinitalState);
+                agent.appendSolution(plan);
+            }
 
-        for(Agent agent : agents){
-            Node myinitalState = initialState.getCopy();
-            myinitalState.thisAgent = agent;
-            agent.setStrategy(new StrategyBestFirst(new AStarHeuristic(myinitalState)));
-            LinkedList<Node> plan = this.search(agent.getStrategy(), myinitalState);
-            agent.appendSolution(plan);
+            //Execute solutions as long as possible
+            while (update()) {
+                currentState.changeState(latestActionArray);
+            }
+            boolean error = false;
+            for(int i = 0; i < latestActionArray.length; i++){
+                if(latestActionArray[i].equals("false")){
+                    error = true;
+                    agentErrorState[i] = true;
+                } else {
+                    agentErrorState[i] = false;
+                }
+            }
+            if(!error){
+                for(Agent a : agents){
+                    subGoals.poll();
+                }
+            } else {
+                //TODO: Resolve conflicts
+            }
         }
 
-        //Agent agent = initialState.getAgents().get(0);
+
+
+
+
+        //Agent agent = currentState.getAgents().get(0);
         /*while (!subGoals.isEmpty()){
             Goal subgoal = subGoals.poll();
             System.err.println("Trying to solve sub-goal: " + subgoal.getLetter() + " at " + subgoal.getCoordinate().getRow() + "," + subgoal.getCoordinate().getColumn());
             subgoal.setCurrentMainGoal(true);
-            agent.setStrategy(new StrategyBestFirst(new AStarHeuristic(initialState)));
+            agent.setStrategy(new StrategyBestFirst(new AStarHeuristic(currentState)));
             LinkedList<Node> plan = this.search(agent.getStrategy());
             System.err.println("Solution found for sub-goal: " + subgoal.getLetter() + " at " + subgoal.getCoordinate().getRow() + "," + subgoal.getCoordinate().getColumn());
             agent.appendSolution(plan);
             subgoal.setCurrentMainGoal(false);
             while(update());
-            initialState = agent.getSolution().getLast();
-            initialState.agents.get(0).setSolution(agent.getSolution());
-            initialState.parent = null;
+            currentState = agent.getSolution().getLast();
+            currentState.agents.get(0).setSolution(agent.getSolution());
+            currentState.parent = null;
         }*/
         //TODO: Commented out for loop while working on single agent
-		/*for (Agent agent : initialState.getAgents()) {
-			agent.setStrategy(new StrategyBestFirst(new AStarHeuristic(initialState)));
+		/*for (Agent agent : currentState.getAgents()) {
+			agent.setStrategy(new StrategyBestFirst(new AStarHeuristic(currentState)));
 
 			// TODO: change to threads
 			agent.setSolution(this.search(agent.getStrategy()));
 		}*/
 
-        // TODO: this can be removed when no more debugging will be done, ever
-
-        System.err.println("Solution found: ");
-        int count = 0;
-        String output = initialState.agents.get(initialState.agents.size() - 1).act(count);
-        while (!output.equals("NoOp")) {
-            System.err.print(output + " ");
-            count++;
-            output = initialState.agents.get(initialState.agents.size() - 1).act(count);
-        }
-        System.err.println();
 
 
     }
@@ -84,7 +102,7 @@ public class MultiAgentClient {
             Goal subGoal = (Goal)iter.next();
             for(Agent agent : agents){
                 boolean goalAssigned = false;
-                for(Box box : initialState.getBoxesByCoordinate().values()){
+                for(Box box : currentState.getBoxesByCoordinate().values()){
                     if(box.getColor().equals(agent.getColor()) && box.getLetter() == Character.toUpperCase(subGoal.getLetter())){
                         agent.setCurrentSubGoal(subGoal);
                         goalAssigned = true;
@@ -151,12 +169,12 @@ public class MultiAgentClient {
                 if ('0' <= id && id <= '9') {				// Agents
                     Agent newAgent = new Agent(id, colors.get(id), new Coordinate(lineCount, i));
                     System.err.println(newAgent.getId());
-                    initialState.agents.add(newAgent);
+                    currentState.agents.add(newAgent);
                     agents.add(newAgent);
                 } else if (id == '+') {						// Walls
                     Node.walls.put(new Coordinate(lineCount, i), true);
                 } else if ('A' <= id && id <= 'Z') {		// Boxes
-                    initialState.addBox(new Box(id, colors.get(id), new Coordinate(lineCount, i)));
+                    currentState.addBox(new Box(id, colors.get(id), new Coordinate(lineCount, i)));
                 } else if ('a' <= id && id <= 'z') {		// Goals
                     Node.addGoal(new Goal(id, new Coordinate(lineCount, i)));
                 }
@@ -175,24 +193,28 @@ public class MultiAgentClient {
         int noActions = 0;
 
         for (int i = 0; i < agents.size(); i++) {
-            jointAction += agents.get(i).multiAct(actionCount);
+            Command action = agents.get(i).act();
+            String actionStr = "";
+            latestActionArray[i] = action;
+            if(action == null){
+                noActions++;
+                actionStr = "NoOp";
+            } else {
+                actionStr = action.toString();
+            }
+            jointAction += actionStr;
             if(i < agents.size() - 1){
                 jointAction += ",";
-            }
-            if(agents.get(i).multiAct(actionCount) == "NoOp"){
-                noActions++;
             }
         }
         jointAction += "]";
         if(noActions == agents.size()){
             return false;
         }
-        System.err.println("Sending command: " + jointAction);
-        /*if(initialState.agents.get(initialState.agents.size() - 1).act(actionCount).equals("NoOp")){
+        System.err.println("Sending command: " + jointAction + "\n");
+        /*if(currentState.agents.get(currentState.agents.size() - 1).act(actionCount).equals("NoOp")){
             return false;
         }*/
-
-        actionCount++;
 
         // Place message in buffer
         System.out.println(jointAction);
@@ -203,8 +225,18 @@ public class MultiAgentClient {
         // Disregard these for now, but read or the server stalls when its output buffer gets filled!
         String percepts = in.readLine();
         System.err.println(percepts);
+
         if (percepts == null)
             return false;
+
+        percepts.replaceAll("\\[\\]", "");
+        String[] returnVals = percepts.split(",");
+        this.latestServerOutput = returnVals;
+        for(String returnVal : returnVals){
+            if(returnVal.equals("false")){
+                return false;
+            }
+        }
 
         return true;
     }
@@ -215,7 +247,6 @@ public class MultiAgentClient {
         System.err.println("Hello from MultiAgentClient. I am sending this using the error outputstream");
         try {
             MultiAgentClient client = new MultiAgentClient();
-            while (client.update());
 
         } catch (IOException e) {
             System.err.println(e.getMessage());

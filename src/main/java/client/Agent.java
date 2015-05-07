@@ -10,6 +10,7 @@ public class Agent {
 	private Strategy strategy;
 	private LinkedList<Node> solution;
 	private Goal currentSubGoal = null;
+	private Node latestAction = null;
 
 	public Agent(char id, String color, Coordinate coordinate) {
 		this.id = id;
@@ -26,21 +27,23 @@ public class Agent {
 		this.solution = new LinkedList<>();
 	}
 
-	public String act(int i) {
-		if (solution.size() > i) {
+	public Command act() {
+		if(solution.size() > 0){
+			Node next = solution.getFirst();
+			latestAction = next;
+			solution.removeFirst();
+			return next.action;
+		} else {
+			return null;
+		}
+
+		/*if (solution.size() > i) {
 			return solution.get(i).action.toActionString();
 		} else {
 			return "NoOp";
-		}
+		}*/
 	}
 
-	public String multiAct(int i){
-		if (solution.size() > i) {
-			return solution.get(i).action.toString();
-		} else {
-			return "NoOp";
-		}
-	}
 	
 	public char getId() {
 		return id;
