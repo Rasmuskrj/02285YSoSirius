@@ -20,7 +20,7 @@ public class MultiAgentClient {
     private Boolean[] agentErrorState = null;
 
     // uncomment two lines below if testing without server and comment the third line
-    //FileReader fr = new FileReader("levels/MAsimple1.lvl");
+    //FileReader fr = new FileReader("levels/MAsimple3.lvl");
     //private BufferedReader in = new BufferedReader(fr);
     private BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 
@@ -28,40 +28,68 @@ public class MultiAgentClient {
         readMap();
         Node.computeGoalDistance();
         findSubgoals();
-        currentState.printState();
-        latestActionArray = new Command[agents.size()];
-        agentErrorState = new Boolean[agents.size()];
-        assignSubgoals();
+        latestActionArray = new Command[currentState.agents.size()];
+        agentErrorState = new Boolean[currentState.agents.size()];
         in.readLine();
-        while(!subGoals.isEmpty()) {
-            for (Agent agent : agents) {
-                //TODO: Only replan if needed
-                Node myinitalState = currentState.getCopy();
-                myinitalState.thisAgent = agent;
-                agent.setStrategy(new StrategyBestFirst(new AStarHeuristic(myinitalState)));
-                LinkedList<Node> plan = this.search(agent.getStrategy(), myinitalState);
-                agent.appendSolution(plan);
+        boolean finished = false;
+        while(!finished) {
+            for (Agent agent : currentState.agents) {
+                agent.findNextGoal(currentState, subGoals);
+                if(!agent.isQuarantined() && !agent.done) {
+                    System.err.println("Agent " + agent.getId() + " finding solution for goal " + agent.getCurrentSubGoal().getLetter());
+                    Node myinitalState = currentState.getCopy();
+                    myinitalState.thisAgent = agent;
+                    agent.setStrategy(new StrategyBestFirst(new AStarHeuristic(myinitalState)));
+                    LinkedList<Node> plan = search(agent.getStrategy(), myinitalState);
+                    agent.appendSolution(plan);
+                }
             }
-
             //Execute solutions as long as possible
-            while (update()) {
-                currentState.changeState(latestActionArray);
+            boolean cont = true;
+            while (cont) {
+                cont = update();
+                boolean status = currentState.changeState(latestActionArray);
+                if(!status) {
+                    currentState.printState();
+                    System.exit(0);
+                }
             }
             boolean error = false;
-            for(int i = 0; i < latestActionArray.length; i++){
-                if(latestActionArray[i].equals("false")){
+            for(int i = 0; i < latestServerOutput.length; i++){
+                if(latestServerOutput[i] != null && latestServerOutput[i].equals("false")){
                     error = true;
                     agentErrorState[i] = true;
+                    if(!currentState.agents.get(i).isQuarantined()) {
+                        System.err.println("Agent number " + currentState.agents.get(i).getId() + " is requesting clear");
+                        currentState.agents.get(i).requestClear(currentState);
+                    }
                 } else {
                     agentErrorState[i] = false;
+                    System.err.println("Agent number " + currentState.agents.get(i).getId() + " is done with no error");
+                    for(Agent a : currentState.getAgents()){
+                        if(a.isQuarantined() && a.getQuarantinedBy().getId() == currentState.agents.get(i).getId()){
+                            a.setQuarantined(false);
+                        }
+                    }
                 }
             }
-            if(!error){
-                for(Agent a : agents){
-                    subGoals.poll();
+            if(error){
+                while (update()) {
+                    boolean status = currentState.changeState(latestActionArray);
+                    if(!status) {
+                        currentState.printState();
+                        System.exit(0);
+                    }
                 }
-            } else {
-                //TODO: Resolve conflicts
+            }
+            boolean agentsDone = true;
+            for(Agent a : currentState.agents){
+                if(a.getCurrentSubGoal() != null){
+                    agentsDone = false;
+                }
+            }
+            if(agentsDone && subGoals.isEmpty()){
+                finished = true;
             }
         }
 
@@ -96,33 +124,14 @@ public class MultiAgentClient {
 
     }
 
-    private void assignSubgoals() {
-        Iterator iter = subGoals.iterator();
-        while (iter.hasNext()){
-            Goal subGoal = (Goal)iter.next();
-            for(Agent agent : agents){
-                boolean goalAssigned = false;
-                for(Box box : currentState.getBoxesByCoordinate().values()){
-                    if(box.getColor().equals(agent.getColor()) && box.getLetter() == Character.toUpperCase(subGoal.getLetter())){
-                        agent.setCurrentSubGoal(subGoal);
-                        goalAssigned = true;
-                        break;
-                    }
-                }
-                if(goalAssigned){
-                    break;
-                }
-            }
-        }
-    }
-
-    public LinkedList<Node> search(Strategy strategy, Node initialState) {
+    public static LinkedList<Node> search(Strategy strategy, Node initialState) {
         strategy.addToFrontier(initialState);
         while (true) {
             //if (strategy.timeSpent() > 300) {
             //	return null;
             //}
             if (strategy.frontierIsEmpty()) {
+                System.err.println("Agent " + initialState.thisAgent.getId() + " says: Frontier is empty");
                 return null;
             }
 
@@ -168,7 +177,6 @@ public class MultiAgentClient {
                 char id = line.charAt(i);
                 if ('0' <= id && id <= '9') {				// Agents
                     Agent newAgent = new Agent(id, colors.get(id), new Coordinate(lineCount, i));
-                    System.err.println(newAgent.getId());
                     currentState.agents.add(newAgent);
                     agents.add(newAgent);
                 } else if (id == '+') {						// Walls
@@ -229,8 +237,8 @@ public class MultiAgentClient {
         if (percepts == null)
             return false;
 
-        percepts.replaceAll("\\[\\]", "");
-        String[] returnVals = percepts.split(",");
+        String strip = percepts.replaceAll("\\[", "").replaceAll("\\]","").replaceAll("\\s", "");
+        String[] returnVals = strip.split(",");
         this.latestServerOutput = returnVals;
         for(String returnVal : returnVals){
             if(returnVal.equals("false")){

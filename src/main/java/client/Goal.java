@@ -5,6 +5,7 @@ public class Goal {
     private Coordinate coordinate;
     private int priority = 0;
     private boolean currentMainGoal = false;
+    private boolean isBeingPrioritized = false;
 
     public Goal(char letter, Coordinate coordinate) {
         this.letter = letter;
@@ -33,6 +34,7 @@ public class Goal {
 
     public void setPriority(int priority) {
         this.priority = priority;
+        isBeingPrioritized = false;
     }
 
     public boolean isCurrentMainGoal() {
@@ -41,5 +43,13 @@ public class Goal {
 
     public void setCurrentMainGoal(boolean currentMainGoal) {
         this.currentMainGoal = currentMainGoal;
+    }
+
+    public boolean isBeingPrioritized() {
+        return isBeingPrioritized;
+    }
+
+    public void setIsBeingPrioritized(boolean isBeingPrioritized) {
+        this.isBeingPrioritized = isBeingPrioritized;
     }
 }

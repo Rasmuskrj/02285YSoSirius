@@ -160,10 +160,22 @@ public class Node {
 	}
 
 	public boolean isGoalState() {
-		Goal goal = thisAgent.getCurrentSubGoal();
-		Box box = boxesByCoordinate.get(goal.getCoordinate());
-		if(box != null && box.getLetter() == Character.toUpperCase(goal.getLetter())){
-			box.setInFinalPosition(true);
+		if(!thisAgent.isClearMode()) {
+			Goal goal = thisAgent.getCurrentSubGoal();
+			Box box = boxesByCoordinate.get(goal.getCoordinate());
+			if (box != null && box.getLetter() == Character.toUpperCase(goal.getLetter())) {
+				box.setInFinalPosition(true);
+				return true;
+			}
+		} else {
+			for(Coordinate cord : thisAgent.getClearCords()){
+				Box box = boxesByCoordinate.get(cord);
+				if(thisAgent.getCoordinate().equals(cord)){
+					return false;
+				} else if(box != null && box.getColor().equals(thisAgent.getColor())){
+					return false;
+				}
+			}
 			return true;
 		}
 
@@ -199,6 +211,7 @@ public class Node {
 
 	//Function used to recursively set goal priority
 	public static int setSingleGoalPriority(Goal goal){
+		goal.setIsBeingPrioritized(true);
 		//Get coordinates for all adjacent cells, and put them in list
 		Coordinate nCord = new Coordinate(goal.getCoordinate().getRow() - 1,goal.getCoordinate().getColumn());
 		Coordinate wCord = new Coordinate(goal.getCoordinate().getRow(), goal.getCoordinate().getColumn() -1 );
@@ -220,13 +233,23 @@ public class Node {
 			//The goal cell is next another goal cell in this direction
 			else if(Node.getGoalsByCoordinate().get(cord) != null){
 				Goal target = Node.getGoalsByCoordinate().get(cord);
+				//Skip this goal if it is already in the stack
+				if(target.isBeingPrioritized()){
+					continue;
+				}
 				//Goal priority is initialized as 0 so if it is higher we can assume that the priority has already been set.
 				if(target.getPriority() < 1) {
 					//If priority has not been set, call this function recursively for the adjacent goal cell and add 1.
-					goal.setPriority(setSingleGoalPriority(target) + 1);
+					int targetPrio = setSingleGoalPriority(target);
+					if(targetPrio < goal.getPriority() || goal.getPriority() < 1) {
+						goal.setPriority(targetPrio + 1);
+					}
 				} else {
 					//else just get the priority and add 1
-					goal.setPriority(target.getPriority() + 1);
+					int targetPrio = target.getPriority();
+					if(targetPrio < goal.getPriority() || goal.getPriority() < 1) {
+						goal.setPriority(targetPrio + 1);
+					}
 				}
 				//Compare the priority to the priorities found in other directions. Note that a wall will not be able to set the returnVal.
 				returnVal = goal.getPriority() < returnVal ? goal.getPriority() : returnVal;
@@ -310,13 +333,24 @@ public class Node {
 	}
 
 	private boolean cellIsFree(int row, int col) {
+		for(Agent agent : agents){
+			if(agent.getId() != thisAgent.getId() && agent.getCoordinate().equals(new Coordinate(row, col))){
+				return false;
+			}
+		}
 		return (Node.walls.get(new Coordinate(row, col)) == null
 					&& this.boxesByCoordinate.get(new Coordinate(row, col)) == null);
 	}
 
 	private boolean boxAt(int row, int col) {
 		Box box = this.boxesByCoordinate.get(new Coordinate(row, col));
-		return box != null && !box.isInFinalPosition();
+		if(thisAgent == null){
+			return box != null && !box.isInFinalPosition();
+		} else if(!thisAgent.isClearMode()){
+			return box != null && !box.isInFinalPosition();
+		} else {
+			return box != null && !box.isInFinalPosition() && box.getColor().equals(thisAgent.getColor());
+		}
 	}
 
 	public int dirToRowChange(dir d) {
@@ -325,6 +359,22 @@ public class Node {
 
 	public int dirToColChange(dir d) {
 		return (d == dir.E ? 1 : (d == dir.W ? -1 : 0)); // East is left one column (1), west is right one column (-1)
+	}
+
+	public ArrayList<Coordinate> commandToCoordinates(Coordinate startPos, Command command){
+		ArrayList<Coordinate> retArr = new ArrayList<>();
+
+		Coordinate newAgentPos = new Coordinate(startPos.getRow() + dirToRowChange(command.dir1), startPos.getColumn() + dirToColChange(command.dir1));
+		retArr.add(newAgentPos);
+
+		if(command.actType == type.Push){
+			Coordinate newBoxPos = new Coordinate(newAgentPos.getRow() + dirToRowChange(command.dir2), newAgentPos.getColumn() + dirToColChange(command.dir2));
+			retArr.add(newBoxPos);
+		} else if(command.actType == type.Pull){
+			Coordinate newBoxPos = new Coordinate(startPos.getRow() + dirToRowChange(command.dir2), startPos.getColumn() + dirToColChange(command.dir2));
+			retArr.add(newBoxPos);
+		}
+		return retArr;
 	}
 
 	public void setParent(Node parent){
@@ -415,35 +465,57 @@ public class Node {
 
 	public boolean changeState(Command[] commands){
 		for(int i = 0; i < commands.length; i++){
+			Agent activeAgent = this.agents.get(i);
 			if(commands[i] != null) {
-				int newAgentRow = this.agents.get(i).getCoordinate().getRow() + dirToRowChange(commands[i].dir1);
-				int newAgentColumn = this.agents.get(i).getCoordinate().getColumn() + dirToColChange(commands[i].dir1);
+				int newAgentRow = activeAgent.getCoordinate().getRow() + dirToRowChange(commands[i].dir1);
+				int newAgentColumn = activeAgent.getCoordinate().getColumn() + dirToColChange(commands[i].dir1);
 				Coordinate newPos = new Coordinate(newAgentRow, newAgentColumn);
 				if (commands[i].actType == type.Pull) {
-					int boxRow = this.agents.get(i).getCoordinate().getRow() + dirToRowChange(commands[i].dir2);
-					int boxCol = this.agents.get(i).getCoordinate().getColumn() + dirToColChange(commands[i].dir2);
-					if (boxAt(boxRow, boxCol)) {
+					int boxRow = activeAgent.getCoordinate().getRow() + dirToRowChange(commands[i].dir2);
+					int boxCol = activeAgent.getCoordinate().getColumn() + dirToColChange(commands[i].dir2);
+					if (boxAt(boxRow, boxCol) && boxesByCoordinate.get(new Coordinate(boxRow, boxCol)).getColor().equals(activeAgent.getColor())) {
 						Box pullBox = this.boxesByCoordinate.get(new Coordinate(boxRow, boxCol));
-						pullBox.setCoordinate(this.agents.get(i).getCoordinate());
-						this.agents.get(i).setCoordinate(newPos);
-					} else {
-						System.err.println("Client State corrupted");
-						return false;
+						Box pullBoxNew = new Box(pullBox.getLetter(), pullBox.getColor(), activeAgent.getCoordinate());
+						boxesByCoordinate.remove(pullBox.getCoordinate());
+
+						if(activeAgent.getCurrentSubGoal() != null && activeAgent.getCurrentSubGoal().getCoordinate().equals(pullBoxNew.getCoordinate()) && activeAgent.isClearMode()) {
+							pullBoxNew.setInFinalPosition(true);
+						}
+						//System.err.println("Agent " + activeAgent.getId() + " moved box from " + boxRow + ", " + boxCol + " to " + activeAgent.getCoordinate().getRow() + ", " + activeAgent.getCoordinate().getColumn());
+						activeAgent.setCoordinate(newPos);
+						boxesByCoordinate.put(pullBoxNew.getCoordinate(), pullBoxNew);
+						} else if(boxesByCoordinate.get(new Coordinate(boxRow, boxCol)).getColor().equals(activeAgent.getColor())){
+							System.err.println("Client State corrupted");
+							return false;
 					}
 
 				} else if (commands[i].actType == type.Push) {
-					int newBoxRow = this.agents.get(i).getCoordinate().getRow() + dirToRowChange(commands[i].dir2);
-					int newBoxCol = this.agents.get(i).getCoordinate().getColumn() + dirToColChange(commands[i].dir2);
-					if (boxAt(newPos.getRow(), newPos.getColumn())) {
+					int newBoxRow = newAgentRow + dirToRowChange(commands[i].dir2);
+					int newBoxCol = newAgentColumn + dirToColChange(commands[i].dir2);
+					if (boxAt(newPos.getRow(), newPos.getColumn()) && boxesByCoordinate.get(newPos).getColor().equals(activeAgent.getColor())) {
 						Box pushBox = this.boxesByCoordinate.get(newPos);
-						pushBox.setCoordinate(new Coordinate(newBoxRow, newBoxCol));
-						this.agents.get(i).setCoordinate(newPos);
-					} else {
+						Box pushBoxNew = new Box(pushBox.getLetter(), pushBox.getColor(), new Coordinate(newBoxRow, newBoxCol));
+						boxesByCoordinate.remove(pushBox.getCoordinate());
+						activeAgent.setCoordinate(newPos);
+						if(activeAgent.getCurrentSubGoal() != null && activeAgent.getCurrentSubGoal().getCoordinate().equals(pushBoxNew.getCoordinate()) && activeAgent.isClearMode()) {
+							pushBoxNew.setInFinalPosition(true);
+						}
+						boxesByCoordinate.put(pushBoxNew.getCoordinate(), pushBoxNew);
+					} else if(boxesByCoordinate.get(newPos).getColor().equals(activeAgent.getColor())){
 						System.err.println("Client state corrupted");
 						return false;
 					}
 				} else {
-					this.agents.get(i).setCoordinate(newPos);
+					boolean movePossible = true;
+					for(Agent a : agents){
+						if(a.getId() != activeAgent.getId() && a.getCoordinate().equals(newPos)){
+							movePossible = false;
+						}
+					}
+					if(movePossible){
+						this.agents.get(i).setCoordinate(newPos);
+					}
+					//System.err.println("Agent " + activeAgent.getId() + "moved to " + newPos.getRow() + ", " + newPos.getColumn());
 				}
 			}
 		}

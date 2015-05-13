@@ -135,12 +135,46 @@ public abstract class Heuristic implements Comparator< Node > {
 		return ret;
 	}
 
+	public int clearModeHeuristic(Node n){
+		int ret = 1;
+		boolean wrongBox = true;
+		for(Coordinate cord : n.thisAgent.getClearCords()){
+			Box box = n.getBoxesByCoordinate().get(cord);
+			if(box != null && !box.getColor().equals(n.thisAgent.getColor())){
+				ret += 20;
+				ret += Math.abs(n.thisAgent.getCoordinate().getRow() - box.getCoordinate().getRow()) +
+						Math.abs(n.thisAgent.getCoordinate().getColumn() - box.getCoordinate().getColumn());
+				Command com = n.action;
+				if(com != null && !(com.actType == Command.type.Move)){
+					//if the agent is moving boxes that is not the target box, the heuristic is worsened.
+					int boxRow = n.thisAgent.getCoordinate().getRow() + n.dirToRowChange(com.dir2);
+					int boxCol = n.thisAgent.getCoordinate().getColumn() + n.dirToColChange(com.dir2);
+					if((boxRow == box.getCoordinate().getRow() && boxCol == box.getCoordinate().getColumn() )){
+						wrongBox = false;
+					}
+				}
+			}
+			if(cord.equals(n.thisAgent.getCoordinate())){
+				ret += 100;
+			}
+			if(wrongBox){
+				ret += 500;
+			}
+		}
+		return ret;
+	}
+
+
 	public int h(Node n) {
 		//return maxManhattanHeuristic(n);
 		//return sumManhattanHeuristic(n);
 		//return sumManhattanExcludeSolvedHeuristic(n);
 		//return sumManhattenPrioritizeClosestHeuristic(n);
-		return manhattanSubgoalHeuristic(n);
+		if(!n.thisAgent.isClearMode()) {
+			return manhattanSubgoalHeuristic(n);
+		} else {
+			return clearModeHeuristic(n);
+		}
 	}
 
 	public abstract int f(Node n);
