@@ -52,4 +52,6 @@ public class Goal {
     public void setIsBeingPrioritized(boolean isBeingPrioritized) {
         this.isBeingPrioritized = isBeingPrioritized;
     }
+
+
 }

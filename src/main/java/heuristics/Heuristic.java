@@ -123,6 +123,15 @@ public abstract class Heuristic implements Comparator< Node > {
 						ret += 10;
 					}
 				}
+				Box possibleBox = n.getBoxesByCoordinate().get(n.thisAgent.getCoordinate());
+				if(possibleBox != null){
+					ret += 200;
+				}
+				for(Agent a : n.agents){
+					if(a.getId() != n.thisAgent.getId() && a.getCoordinate().equals(n.thisAgent.getCoordinate())){
+						ret += 200;
+					}
+				}
 
 			} else {
 				if(!n.isGoalState()) {
@@ -140,7 +149,7 @@ public abstract class Heuristic implements Comparator< Node > {
 		boolean wrongBox = true;
 		for(Coordinate cord : n.thisAgent.getClearCords()){
 			Box box = n.getBoxesByCoordinate().get(cord);
-			if(box != null && !box.getColor().equals(n.thisAgent.getColor())){
+			if(box != null && box.getColor() != null && !box.getColor().equals(n.thisAgent.getColor())){
 				ret += 20;
 				ret += Math.abs(n.thisAgent.getCoordinate().getRow() - box.getCoordinate().getRow()) +
 						Math.abs(n.thisAgent.getCoordinate().getColumn() - box.getCoordinate().getColumn());
@@ -158,6 +167,24 @@ public abstract class Heuristic implements Comparator< Node > {
 				ret += 100;
 			}
 			if(wrongBox){
+				ret += 200;
+			}
+		}
+		Box possibleBox = n.getBoxesByCoordinate().get(n.thisAgent.getCoordinate());
+		if(possibleBox != null){
+			ret += 20;
+		}
+		for(Agent a : n.agents){
+			if(a.getId() != n.thisAgent.getId() && a.getCoordinate().equals(n.thisAgent.getCoordinate())){
+				ret += 20;
+			}
+		}
+		Command com2 = n.action;
+		if(com2 != null && com2.actType == Command.type.Push){
+			int boxRow = n.thisAgent.getCoordinate().getRow() + n.dirToRowChange(com2.dir2);
+			int boxCol = n.thisAgent.getCoordinate().getColumn() + n.dirToColChange(com2.dir2);
+			possibleBox = n.getBoxesByCoordinate().get(new Coordinate(boxRow, boxCol));
+			if(possibleBox != null){
 				ret += 500;
 			}
 		}

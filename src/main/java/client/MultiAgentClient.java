@@ -13,7 +13,7 @@ public class MultiAgentClient {
     // the client can actually work as a blackboard, I'd think (at least for now)
     private Node currentState = new Node(null);
 
-    private PriorityQueue<Goal> subGoals;
+    public PriorityQueue<Goal> subGoals;
     private ArrayList<Agent> agents = new ArrayList<>();
     private String[] latestServerOutput = null;
     private Command[] latestActionArray = null;
@@ -41,14 +41,19 @@ public class MultiAgentClient {
                     myinitalState.thisAgent = agent;
                     agent.setStrategy(new StrategyBestFirst(new AStarHeuristic(myinitalState)));
                     LinkedList<Node> plan = search(agent.getStrategy(), myinitalState);
-                    agent.appendSolution(plan);
+                    if(plan != null) {
+                        agent.appendSolution(plan);
+                    } else {
+                        System.err.println("Solution could not be found");
+                    }
                 }
             }
             //Execute solutions as long as possible
             boolean cont = true;
             while (cont) {
                 cont = update();
-                boolean status = currentState.changeState(latestActionArray);
+                boolean status = currentState.changeState(latestActionArray, latestServerOutput, this);
+                //currentState.printState();
                 if(!status) {
                     currentState.printState();
                     System.exit(0);
@@ -75,7 +80,7 @@ public class MultiAgentClient {
             }
             if(error){
                 while (update()) {
-                    boolean status = currentState.changeState(latestActionArray);
+                    boolean status = currentState.changeState(latestActionArray, latestServerOutput, this);
                     if(!status) {
                         currentState.printState();
                         System.exit(0);

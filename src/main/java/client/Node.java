@@ -172,7 +172,7 @@ public class Node {
 				Box box = boxesByCoordinate.get(cord);
 				if(thisAgent.getCoordinate().equals(cord)){
 					return false;
-				} else if(box != null && box.getColor().equals(thisAgent.getColor())){
+				} else if(box != null && box.getColor() != null && box.getColor().equals(thisAgent.getColor())){
 					return false;
 				}
 			}
@@ -333,23 +333,35 @@ public class Node {
 	}
 
 	private boolean cellIsFree(int row, int col) {
-		for(Agent agent : agents){
-			if(agent.getId() != thisAgent.getId() && agent.getCoordinate().equals(new Coordinate(row, col))){
-				return false;
+		if(thisAgent.isClearMode()) {
+			for (Agent agent : agents) {
+				if (agent.getId() != thisAgent.getId() && agent.getCoordinate().equals(new Coordinate(row, col))) {
+					return false;
+				}
 			}
 		}
+		Box box = boxesByCoordinate.get(new Coordinate(row, col));
+		boolean noBox;
+		if(box == null || box.getColor() != null && !box.getColor().equals(thisAgent.getColor())){
+			noBox = true;
+		} else {
+			noBox = false;
+		}
+
 		return (Node.walls.get(new Coordinate(row, col)) == null
-					&& this.boxesByCoordinate.get(new Coordinate(row, col)) == null);
+					&& noBox);
 	}
 
 	private boolean boxAt(int row, int col) {
 		Box box = this.boxesByCoordinate.get(new Coordinate(row, col));
-		if(thisAgent == null){
-			return box != null && !box.isInFinalPosition();
-		} else if(!thisAgent.isClearMode()){
-			return box != null && !box.isInFinalPosition();
+		if(box == null){
+			return false;
 		} else {
-			return box != null && !box.isInFinalPosition() && box.getColor().equals(thisAgent.getColor());
+			if(thisAgent == null || thisAgent.getColor() == null){
+				return !box.isInFinalPosition();
+			} else {
+				return !box.isInFinalPosition() && box.getColor().equals(thisAgent.getColor());
+			}
 		}
 	}
 
@@ -463,10 +475,10 @@ public class Node {
 		this.f = f;
 	}
 
-	public boolean changeState(Command[] commands){
+	public boolean changeState(Command[] commands, String[] serverOutput, MultiAgentClient client){
 		for(int i = 0; i < commands.length; i++){
 			Agent activeAgent = this.agents.get(i);
-			if(commands[i] != null) {
+			if(commands[i] != null && !serverOutput[i].equals("false")) {
 				int newAgentRow = activeAgent.getCoordinate().getRow() + dirToRowChange(commands[i].dir1);
 				int newAgentColumn = activeAgent.getCoordinate().getColumn() + dirToColChange(commands[i].dir1);
 				Coordinate newPos = new Coordinate(newAgentRow, newAgentColumn);
@@ -478,12 +490,21 @@ public class Node {
 						Box pullBoxNew = new Box(pullBox.getLetter(), pullBox.getColor(), activeAgent.getCoordinate());
 						boxesByCoordinate.remove(pullBox.getCoordinate());
 
-						if(activeAgent.getCurrentSubGoal() != null && activeAgent.getCurrentSubGoal().getCoordinate().equals(pullBoxNew.getCoordinate()) && activeAgent.isClearMode()) {
+						/*if(activeAgent.getCurrentSubGoal() != null && activeAgent.getCurrentSubGoal().getCoordinate().equals(pullBoxNew.getCoordinate()) && activeAgent.isClearMode()) {
 							pullBoxNew.setInFinalPosition(true);
-						}
+							System.err.println("Set in final position");
+						}*/
 						//System.err.println("Agent " + activeAgent.getId() + " moved box from " + boxRow + ", " + boxCol + " to " + activeAgent.getCoordinate().getRow() + ", " + activeAgent.getCoordinate().getColumn());
 						activeAgent.setCoordinate(newPos);
 						boxesByCoordinate.put(pullBoxNew.getCoordinate(), pullBoxNew);
+						for(Goal goal : goalsByCoordinate.values()){
+							if(goal.getCoordinate().equals(pullBox.getCoordinate()) && goal.getLetter() == Character.toLowerCase(pullBox.getLetter())){
+								if(!client.subGoals.contains(goal)){
+									client.subGoals.offer(goal);
+									System.err.println("subgoal " + goal.getLetter() + " at " + goal.getCoordinate().toString() + " reinserted in list");
+								}
+							}
+						}
 						} else if(boxesByCoordinate.get(new Coordinate(boxRow, boxCol)).getColor().equals(activeAgent.getColor())){
 							System.err.println("Client State corrupted");
 							return false;
@@ -497,10 +518,19 @@ public class Node {
 						Box pushBoxNew = new Box(pushBox.getLetter(), pushBox.getColor(), new Coordinate(newBoxRow, newBoxCol));
 						boxesByCoordinate.remove(pushBox.getCoordinate());
 						activeAgent.setCoordinate(newPos);
-						if(activeAgent.getCurrentSubGoal() != null && activeAgent.getCurrentSubGoal().getCoordinate().equals(pushBoxNew.getCoordinate()) && activeAgent.isClearMode()) {
+						/*if(activeAgent.getCurrentSubGoal() != null && activeAgent.getCurrentSubGoal().getCoordinate().equals(pushBoxNew.getCoordinate()) && activeAgent.isClearMode()) {
 							pushBoxNew.setInFinalPosition(true);
-						}
+							System.err.println("Set in final position");
+						}*/
 						boxesByCoordinate.put(pushBoxNew.getCoordinate(), pushBoxNew);
+						for(Goal goal : goalsByCoordinate.values()){
+							if(goal.getCoordinate().equals(pushBox.getCoordinate()) && goal.getLetter() == Character.toLowerCase(pushBox.getLetter())){
+								if(!client.subGoals.contains(goal)){
+									client.subGoals.offer(goal);
+									System.err.println("subgoal " + goal.getLetter() + " at " + goal.getCoordinate().toString() + " reinserted in list");
+								}
+							}
+						}
 					} else if(boxesByCoordinate.get(newPos).getColor().equals(activeAgent.getColor())){
 						System.err.println("Client state corrupted");
 						return false;

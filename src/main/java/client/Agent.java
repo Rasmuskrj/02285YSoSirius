@@ -64,12 +64,14 @@ public class Agent {
 		}
 		if(color == null){
 			currentSubGoal = subGoals.poll();
+			done = false;
 		} else {
 			for(Goal goal : subGoals){
 				for(Box box : currentState.getBoxesByCoordinate().values()){
 					if(box.getColor().equals(color) && box.getLetter() == Character.toUpperCase(goal.getLetter())){
 						currentSubGoal = goal;
 						subGoals.remove(goal);
+						done = false;
 						return;
 					}
 				}
@@ -92,9 +94,11 @@ public class Agent {
 			cmdEffectsCoordinates = currentState.commandToCoordinates(pos, cmd);
 			pos = new Coordinate(cmdEffectsCoordinates.get(0).getRow(), cmdEffectsCoordinates.get(0).getColumn());
 			clearCoordinates.addAll(cmdEffectsCoordinates);
+			//System.err.println(cmd.toString());
 		}
 		cmd = act();
 		while(cmd != null){
+			//System.err.println(cmd.toString());
 			cmdEffectsCoordinates = currentState.commandToCoordinates(pos, cmd);
 			pos = new Coordinate(cmdEffectsCoordinates.get(0).getRow(), cmdEffectsCoordinates.get(0).getColumn());
 			clearCoordinates.addAll(cmdEffectsCoordinates);
@@ -104,8 +108,10 @@ public class Agent {
 			if(agent.getId() != id){
 				for(Coordinate cord : clearCoordinates){
 					Box box = currentState.getBoxesByCoordinate().get(cord);
-					if(agent.getCoordinate().equals(cord) || (box != null && box.getColor() != null && box.getColor().equals(agent.getColor()))){
+					if(agent.getCoordinate().equals(cord) || (box != null && box.getColor() != null && box.getColor().equals(agent.getColor()) && !box.getColor().equals(color))){
+						//TODO: needs to only request clears that the current agent is responsible for
 						agent.clearCells(Coordinate.cloneCordList(clearCoordinates), currentState, this);
+						break;
 					}
 				}
 
@@ -122,7 +128,15 @@ public class Agent {
 		myCurrentState.thisAgent = this;
 		this.setStrategy(new StrategyBestFirst(new AStarHeuristic(myCurrentState)));
 		LinkedList<Node> plan = MultiAgentClient.search(this.getStrategy(), myCurrentState);
-		this.appendSolution(plan);
+		if(plan != null) {
+			this.appendSolution(plan);
+		} else {
+			System.err.println("Solution could not be found");
+		}
+		System.err.println("Clear solution:");
+		//for(Node n : plan){
+		//	System.err.println(n.action.toString());
+		//}
 		clearMode = false;
 		clearCords.clear();
 		quarantined = true;
