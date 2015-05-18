@@ -1,5 +1,6 @@
 package client;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 public class Coordinate {
@@ -8,6 +9,11 @@ public class Coordinate {
     public Coordinate(int row, int column) {
         this.row = row;
         this.column = column;
+    }
+
+    public Coordinate(Coordinate cord){
+        this.row = cord.getRow();
+        this.column = cord.getColumn();
     }
 
     public int getColumn() {
@@ -37,6 +43,14 @@ public class Coordinate {
     	neighbours.add(new Coordinate(this.row, this.column-1));
     	neighbours.add(new Coordinate(this.row, this.column+1));
     	return neighbours;
+    }
+
+    public static ArrayList<Coordinate> cloneCordList(ArrayList<Coordinate> list){
+        ArrayList<Coordinate> clone = new ArrayList<>(list.size());
+        for(Coordinate cord : list){
+            clone.add(new Coordinate(cord));
+        }
+        return clone;
     }
     
     @Override

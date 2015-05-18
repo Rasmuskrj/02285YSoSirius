@@ -1,0 +1,29 @@
+blue: 0,A
+red: 1,B
+green: 2,C
+magenta: 3,D
++++++++++++++
++           +
++  DDDDDDD  +
++  DcccccD  +
++  DcBBBcD  +
++  DcBaBcD  +
++  DcBBBcD  +
++  DcccccD  +
++  DDDDDDD  +
++           +
+++++++ ++++++
++           +
++  ddddddd  +
++  dCCCCCd  +
++  dCbbbCd  +
++  dCbAbCd  +
++  dCbbbCd  +
++  dCCCCCd  +
++  ddddddd  +
++           +
+++++++3++++++
+     +2+
+     +1+
+     +0+
+     +++
