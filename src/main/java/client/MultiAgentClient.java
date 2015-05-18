@@ -64,9 +64,10 @@ public class MultiAgentClient {
                 if(latestServerOutput[i] != null && latestServerOutput[i].equals("false")){
                     error = true;
                     agentErrorState[i] = true;
+                    Agent failAgent = currentState.getAgentById(Integer.toString(i).charAt(0));
                     if(!currentState.agents.get(i).isQuarantined()) {
-                        System.err.println("Agent number " + currentState.agents.get(i).getId() + " is requesting clear");
-                        currentState.agents.get(i).requestClear(currentState);
+                        System.err.println("Agent number " + failAgent.getId() + " is requesting clear");
+                        failAgent.requestClear(currentState);
                     }
                 } else {
                     agentErrorState[i] = false;
@@ -204,9 +205,10 @@ public class MultiAgentClient {
 
         String jointAction = "[";
         int noActions = 0;
+        ArrayList<Agent> actAgent = Agent.sortById(agents);
 
-        for (int i = 0; i < agents.size(); i++) {
-            Command action = agents.get(i).act();
+        for (int i = 0; i < actAgent.size(); i++) {
+            Command action = actAgent.get(i).act();
             String actionStr = "";
             latestActionArray[i] = action;
             if(action == null){
@@ -216,12 +218,12 @@ public class MultiAgentClient {
                 actionStr = action.toString();
             }
             jointAction += actionStr;
-            if(i < agents.size() - 1){
+            if(i < actAgent.size() - 1){
                 jointAction += ",";
             }
         }
         jointAction += "]";
-        if(noActions == agents.size()){
+        if(noActions == actAgent.size()){
             return false;
         }
         System.err.println("Sending command: " + jointAction + "\n");

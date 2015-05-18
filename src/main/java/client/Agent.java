@@ -94,11 +94,11 @@ public class Agent {
 			cmdEffectsCoordinates = currentState.commandToCoordinates(pos, cmd);
 			pos = new Coordinate(cmdEffectsCoordinates.get(0).getRow(), cmdEffectsCoordinates.get(0).getColumn());
 			clearCoordinates.addAll(cmdEffectsCoordinates);
-			//System.err.println(cmd.toString());
+			System.err.println(cmd.toString());
 		}
 		cmd = act();
 		while(cmd != null){
-			//System.err.println(cmd.toString());
+			System.err.println(cmd.toString());
 			cmdEffectsCoordinates = currentState.commandToCoordinates(pos, cmd);
 			pos = new Coordinate(cmdEffectsCoordinates.get(0).getRow(), cmdEffectsCoordinates.get(0).getColumn());
 			clearCoordinates.addAll(cmdEffectsCoordinates);
@@ -106,15 +106,14 @@ public class Agent {
 		}
 		for(Agent agent : currentState.agents){
 			if(agent.getId() != id){
+				ArrayList<Coordinate> agentClearCords = new ArrayList<>();
 				for(Coordinate cord : clearCoordinates){
 					Box box = currentState.getBoxesByCoordinate().get(cord);
 					if(agent.getCoordinate().equals(cord) || (box != null && box.getColor() != null && box.getColor().equals(agent.getColor()) && !box.getColor().equals(color))){
-						//TODO: needs to only request clears that the current agent is responsible for
-						agent.clearCells(Coordinate.cloneCordList(clearCoordinates), currentState, this);
-						break;
+						agentClearCords.add(cord);
 					}
 				}
-
+				agent.clearCells(agentClearCords, currentState, this);
 			}
 		}
 	}
@@ -134,9 +133,9 @@ public class Agent {
 			System.err.println("Solution could not be found");
 		}
 		System.err.println("Clear solution:");
-		//for(Node n : plan){
-		//	System.err.println(n.action.toString());
-		//}
+		for(Node n : plan){
+			System.err.println(n.action.toString());
+		}
 		clearMode = false;
 		clearCords.clear();
 		quarantined = true;
@@ -255,5 +254,17 @@ public class Agent {
 		result = 31 * result + (color != null ? color.hashCode() : 0);
 		result = 31 * result + coordinate.hashCode();
 		return result;
+	}
+
+	public static ArrayList<Agent> sortById(ArrayList<Agent> agents){
+		ArrayList<Agent> returnArr = new ArrayList<>(agents.size());
+		for( int i = 0; i < agents.size(); i++){
+			returnArr.add(null);
+		}
+		for (Agent agent : agents){
+			returnArr.remove(Character.getNumericValue(agent.getId()));
+			returnArr.add(Character.getNumericValue(agent.getId()), agent);
+		}
+		return returnArr;
 	}
 }

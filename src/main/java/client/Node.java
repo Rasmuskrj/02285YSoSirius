@@ -147,6 +147,15 @@ public class Node {
 		return agents;
 	}
 
+	public Agent getAgentById(char id){
+		for(Agent agent : agents){
+			if(agent.getId() == id){
+				return agent;
+			}
+		}
+		return null;
+	}
+
 	public void setAgents(ArrayList<Agent> agents) {
 		this.agents = agents;
 	}
@@ -477,7 +486,7 @@ public class Node {
 
 	public boolean changeState(Command[] commands, String[] serverOutput, MultiAgentClient client){
 		for(int i = 0; i < commands.length; i++){
-			Agent activeAgent = this.agents.get(i);
+			Agent activeAgent = this.getAgentById(Integer.toString(i).charAt(0));
 			if(commands[i] != null && !serverOutput[i].equals("false")) {
 				int newAgentRow = activeAgent.getCoordinate().getRow() + dirToRowChange(commands[i].dir1);
 				int newAgentColumn = activeAgent.getCoordinate().getColumn() + dirToColChange(commands[i].dir1);
@@ -485,7 +494,7 @@ public class Node {
 				if (commands[i].actType == type.Pull) {
 					int boxRow = activeAgent.getCoordinate().getRow() + dirToRowChange(commands[i].dir2);
 					int boxCol = activeAgent.getCoordinate().getColumn() + dirToColChange(commands[i].dir2);
-					if (boxAt(boxRow, boxCol) && boxesByCoordinate.get(new Coordinate(boxRow, boxCol)).getColor().equals(activeAgent.getColor())) {
+					if (boxAt(boxRow, boxCol) && boxesByCoordinate.get(new Coordinate(boxRow, boxCol)).getColor() == null || boxAt(boxRow, boxCol) && boxesByCoordinate.get(new Coordinate(boxRow, boxCol)).getColor().equals(activeAgent.getColor())) {
 						Box pullBox = this.boxesByCoordinate.get(new Coordinate(boxRow, boxCol));
 						Box pullBoxNew = new Box(pullBox.getLetter(), pullBox.getColor(), activeAgent.getCoordinate());
 						boxesByCoordinate.remove(pullBox.getCoordinate());
@@ -505,15 +514,16 @@ public class Node {
 								}
 							}
 						}
-						} else if(boxesByCoordinate.get(new Coordinate(boxRow, boxCol)).getColor().equals(activeAgent.getColor())){
-							System.err.println("Client State corrupted");
-							return false;
+					} else if(boxesByCoordinate.get(new Coordinate(boxRow, boxCol)).getColor() == null || boxesByCoordinate.get(new Coordinate(boxRow, boxCol)).getColor().equals(activeAgent.getColor())){
+						System.err.println("No box at: " + newPos.toString());
+						System.err.println("Client State corrupted");
+						return false;
 					}
 
 				} else if (commands[i].actType == type.Push) {
 					int newBoxRow = newAgentRow + dirToRowChange(commands[i].dir2);
 					int newBoxCol = newAgentColumn + dirToColChange(commands[i].dir2);
-					if (boxAt(newPos.getRow(), newPos.getColumn()) && boxesByCoordinate.get(newPos).getColor().equals(activeAgent.getColor())) {
+					if (boxAt(newPos.getRow(), newPos.getColumn()) && boxesByCoordinate.get(newPos).getColor() == null || boxAt(newPos.getRow(), newPos.getColumn()) && boxesByCoordinate.get(newPos).getColor() != null && boxesByCoordinate.get(newPos).getColor().equals(activeAgent.getColor())) {
 						Box pushBox = this.boxesByCoordinate.get(newPos);
 						Box pushBoxNew = new Box(pushBox.getLetter(), pushBox.getColor(), new Coordinate(newBoxRow, newBoxCol));
 						boxesByCoordinate.remove(pushBox.getCoordinate());
@@ -531,7 +541,8 @@ public class Node {
 								}
 							}
 						}
-					} else if(boxesByCoordinate.get(newPos).getColor().equals(activeAgent.getColor())){
+					} else if(boxesByCoordinate.get(newPos).getColor() == null ||  boxesByCoordinate.get(newPos).getColor().equals(activeAgent.getColor())){
+						System.err.println("No box at: " + newPos.toString());
 						System.err.println("Client state corrupted");
 						return false;
 					}
@@ -542,8 +553,8 @@ public class Node {
 							movePossible = false;
 						}
 					}
-					if(movePossible){
-						this.agents.get(i).setCoordinate(newPos);
+					if (movePossible){
+						activeAgent.setCoordinate(newPos);
 					}
 					//System.err.println("Agent " + activeAgent.getId() + "moved to " + newPos.getRow() + ", " + newPos.getColumn());
 				}
