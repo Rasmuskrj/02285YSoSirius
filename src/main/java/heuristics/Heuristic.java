@@ -1,8 +1,9 @@
 package heuristics;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.PriorityQueue;
+import java.util.HashSet;
 
 import client.*;
 
@@ -87,19 +88,22 @@ public abstract class Heuristic implements Comparator< Node > {
 		int ret = 0;
 		Goal currentSubGoal = null;
 		//Find current main subgoal. CurrentMainGoal is set in the while-loop in OneAgentClient
-		for (Goal goal : Node.getGoalsByCoordinate().values()){
+		currentSubGoal = n.thisAgent.getCurrentSubGoal();
+
+		/*for (Goal goal : Node.getGoalsByCoordinate().values()){
 			if(goal.isCurrentMainGoal()){
 				currentSubGoal = goal;
 				break;
 			}
-		}
+		}*/
 		if(currentSubGoal != null){
 			//find closest box that can be used to solve
 			int boxDistance = Integer.MAX_VALUE;
 			Box targetBox = null;
 			for(Box box : n.getBoxesByCoordinate().values()){
 				if(!box.isInFinalPosition() && box.getLetter() == Character.toUpperCase(currentSubGoal.getLetter())){
-					HashMap<Coordinate, Integer> goalMap = Node.goalDistance.get(currentSubGoal);
+					//HashMap<Coordinate, Integer> goalMap = Node.goalDistance.get(currentSubGoal);
+					HashMap<Coordinate, Integer> goalMap = Node.cellDistance.get(currentSubGoal.getCoordinate());
 					int dist = goalMap.get(box.getCoordinate());
 					//int dist = Math.abs(box.getCoordinate().getColumn() - currentSubGoal.getCoordinate().getColumn()) + Math.abs(box.getCoordinate().getRow() - currentSubGoal.getCoordinate().getRow());
 					if(dist < boxDistance){
@@ -108,17 +112,26 @@ public abstract class Heuristic implements Comparator< Node > {
 					}
 				}
 			}
+			Command com = n.action;
 			if(targetBox != null){
 				//calculate heuristic. There is extra weight in moving the box closer to its goal.
-				ret = (10 * boxDistance) + Math.abs(n.agents.get(0).getCoordinate().getRow() - targetBox.getCoordinate().getRow()) +
-						Math.abs(n.agents.get(0).getCoordinate().getColumn() - targetBox.getCoordinate().getColumn());
-				Command com = n.action;
+				ret = (10 * boxDistance) + Math.abs(n.thisAgent.getCoordinate().getRow() - targetBox.getCoordinate().getRow()) +
+						Math.abs(n.thisAgent.getCoordinate().getColumn() - targetBox.getCoordinate().getColumn());
 				if(com != null && !(com.actType == Command.type.Move)){
 					//if the agent is moving boxes that is not the target box, the heuristic is worsened.
-					int boxRow = n.agents.get(0).getCoordinate().getRow() + n.dirToRowChange(com.dir2);
-					int boxCol = n.agents.get(0).getCoordinate().getColumn() + n.dirToColChange(com.dir2);
+					int boxRow = n.thisAgent.getCoordinate().getRow() + n.dirToRowChange(com.dir2);
+					int boxCol = n.thisAgent.getCoordinate().getColumn() + n.dirToColChange(com.dir2);
 					if(!(boxRow == targetBox.getCoordinate().getRow() && boxCol == targetBox.getCoordinate().getColumn() )){
-						ret += 10;
+						ret += 30;
+					}
+				}
+				Box possibleBox = n.getBoxesByCoordinate().get(n.thisAgent.getCoordinate());
+				if(possibleBox != null){
+					ret += 200;
+				}
+				for(Agent a : n.agents){
+					if(a.getId() != n.thisAgent.getId() && a.getCoordinate().equals(n.thisAgent.getCoordinate())){
+						ret += 200;
 					}
 				}
 
@@ -133,12 +146,64 @@ public abstract class Heuristic implements Comparator< Node > {
 		return ret;
 	}
 
+	public int clearModeHeuristic(Node n){
+		int ret = 1;
+		boolean wrongBox = true;
+		for(Coordinate cord : n.thisAgent.getClearCords()){
+			Node.computeCellDistance(new HashSet<Coordinate>(Arrays.asList(cord)));
+			Box box = n.getBoxesByCoordinate().get(cord);
+			if(box != null && box.getColor() != null && !box.getColor().equals(n.thisAgent.getColor())){
+				ret += 20;
+				ret += Node.cellDistance.get(cord).get(n.thisAgent.getCoordinate());
+				Command com = n.action;
+				if(com != null && !(com.actType == Command.type.Move)){
+					//if the agent is moving boxes that is not the target box, the heuristic is worsened.
+					int boxRow = n.thisAgent.getCoordinate().getRow() + n.dirToRowChange(com.dir2);
+					int boxCol = n.thisAgent.getCoordinate().getColumn() + n.dirToColChange(com.dir2);
+					if((boxRow == box.getCoordinate().getRow() && boxCol == box.getCoordinate().getColumn() )){
+						wrongBox = false;
+					}
+				}
+			}
+			if(cord.equals(n.thisAgent.getCoordinate())){
+				ret += 100;
+			}
+			if(wrongBox){
+				ret += 200;
+			}
+		}
+		Box possibleBox = n.getBoxesByCoordinate().get(n.thisAgent.getCoordinate());
+		if(possibleBox != null){
+			ret += 20;
+		}
+		for(Agent a : n.agents){
+			if(a.getId() != n.thisAgent.getId() && a.getCoordinate().equals(n.thisAgent.getCoordinate())){
+				ret += 20;
+			}
+		}
+		Command com2 = n.action;
+		if(com2 != null && com2.actType == Command.type.Push){
+			int boxRow = n.thisAgent.getCoordinate().getRow() + n.dirToRowChange(com2.dir2);
+			int boxCol = n.thisAgent.getCoordinate().getColumn() + n.dirToColChange(com2.dir2);
+			possibleBox = n.getBoxesByCoordinate().get(new Coordinate(boxRow, boxCol));
+			if(possibleBox != null){
+				ret += 500;
+			}
+		}
+		return ret;
+	}
+
+
 	public int h(Node n) {
 		//return maxManhattanHeuristic(n);
 		//return sumManhattanHeuristic(n);
 		//return sumManhattanExcludeSolvedHeuristic(n);
 		//return sumManhattenPrioritizeClosestHeuristic(n);
-		return manhattanSubgoalHeuristic(n);
+		if(!n.thisAgent.isClearMode()) {
+			return manhattanSubgoalHeuristic(n);
+		} else {
+			return clearModeHeuristic(n);
+		}
 	}
 
 	public abstract int f(Node n);

@@ -23,7 +23,8 @@ public class OneAgentClient {
 
 	public OneAgentClient() throws IOException {
 		readMap();
-		Node.computeGoalDistance();
+		Node.computeCellDistance(Node.getGoalsByCoordinate().keySet());
+		//Node.computeGoalDistance();
 		findSubgoals();
 
 		Agent agent = initialState.getAgents().get(0);
@@ -50,7 +51,7 @@ public class OneAgentClient {
 		}*/
 		
 		// TODO: this can be removed when no more debugging will be done, ever
-		
+		/*
 		System.err.println("Solution found: ");
 		int count = 0;
 		String output = initialState.agents.get(initialState.agents.size() - 1).act(count);
@@ -59,7 +60,7 @@ public class OneAgentClient {
 			count++;
 			output = initialState.agents.get(initialState.agents.size() - 1).act(count);
 		}
-		System.err.println();
+		System.err.println();*/
 		
 		
 	}
@@ -138,11 +139,11 @@ public class OneAgentClient {
 
 		//for (int i = 0; i < initialState.agents.size() - 1; i++)
 		//	jointAction += initialState.agents.get(i).act(actionCount) + ",";
-		if(initialState.agents.get(initialState.agents.size() - 1).act(actionCount).equals("NoOp")){
-			return false;
-		}
+	//	if(initialState.agents.get(initialState.agents.size() - 1).act(actionCount).equals("NoOp")){
+	//		return false;
+	//	}
 		
-		jointAction += initialState.agents.get(initialState.agents.size() - 1).act(actionCount);
+	//	jointAction += initialState.agents.get(initialState.agents.size() - 1).act(actionCount);
 		
 		actionCount++;
 		
