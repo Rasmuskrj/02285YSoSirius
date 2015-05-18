@@ -26,7 +26,8 @@ public class MultiAgentClient {
 
     public MultiAgentClient() throws IOException {
         readMap();
-        Node.computeGoalDistance();
+        Node.computeCellDistance(Node.getGoalsByCoordinate().keySet());
+        //Node.computeGoalDistance();
         findSubgoals();
         latestActionArray = new Command[currentState.agents.size()];
         agentErrorState = new Boolean[currentState.agents.size()];

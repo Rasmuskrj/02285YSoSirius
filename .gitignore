@@ -5,3 +5,6 @@
 /bin
 .settings/
 src/main/main.iml
+/levels/competition
+*.log
+*.out
