@@ -12,6 +12,13 @@ public class Box {
         this.coordinate = coordinate;
     }
 
+    public Box(char letter, String color, Coordinate coordinate, boolean inFinalPosition) {
+        this.letter = letter;
+        this.color = color;
+        this.coordinate = coordinate;
+        this.inFinalPosition = inFinalPosition;
+    }
+
     public char getLetter() {
         return letter;
     }

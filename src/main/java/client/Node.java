@@ -221,6 +221,7 @@ public class Node {
 	//Function used to recursively set goal priority
 	public static int setSingleGoalPriority(Goal goal){
 		goal.setIsBeingPrioritized(true);
+		int bufferZoneOffset = 10;
 		//Get coordinates for all adjacent cells, and put them in list
 		Coordinate nCord = new Coordinate(goal.getCoordinate().getRow() - 1,goal.getCoordinate().getColumn());
 		Coordinate wCord = new Coordinate(goal.getCoordinate().getRow(), goal.getCoordinate().getColumn() -1 );
@@ -236,8 +237,8 @@ public class Node {
 			//The goal is next to a "free" cell meaning that it has neither a wall or another goal cell. Base case for recursive function
 			if(Node.walls.get(cord) == null && Node.getGoalsByCoordinate().get(cord) == null){
 				//Need to also call the setter here in case this is a recursive call of the function.
-				goal.setPriority(1);
-				return 1;
+				goal.setPriority(1 + bufferZoneOffset);
+				return 1 + bufferZoneOffset;
 			}
 			//The goal cell is next another goal cell in this direction
 			else if(Node.getGoalsByCoordinate().get(cord) != null){
@@ -251,13 +252,13 @@ public class Node {
 					//If priority has not been set, call this function recursively for the adjacent goal cell and add 1.
 					int targetPrio = setSingleGoalPriority(target);
 					if(targetPrio < goal.getPriority() || goal.getPriority() < 1) {
-						goal.setPriority(targetPrio + 1);
+						goal.setPriority(targetPrio + 1 + bufferZoneOffset);
 					}
 				} else {
 					//else just get the priority and add 1
 					int targetPrio = target.getPriority();
 					if(targetPrio < goal.getPriority() || goal.getPriority() < 1) {
-						goal.setPriority(targetPrio + 1);
+						goal.setPriority(targetPrio + 1 + bufferZoneOffset);
 					}
 				}
 				//Compare the priority to the priorities found in other directions. Note that a wall will not be able to set the returnVal.
@@ -299,7 +300,7 @@ public class Node {
 						Box boxToMove = this.boxesByCoordinate.get(
 											new Coordinate(newAgentRow, newAgentCol));
 						Box boxToMoveCopy = new Box(boxToMove.getLetter(), boxToMove.getColor(),
-													new Coordinate(newBoxRow, newBoxCol));
+													new Coordinate(newBoxRow, newBoxCol), boxToMove.isInFinalPosition());
 						//boxToMove.setCoordinate(new Coordinate(newBoxRow, newBoxCol));
 						n.boxesByCoordinate.put(new Coordinate(newBoxRow, newBoxCol), boxToMoveCopy);
 						n.boxesByCoordinate.remove(new Coordinate(newAgentRow, newAgentCol));
@@ -322,7 +323,7 @@ public class Node {
 											new Coordinate(boxRow, boxCol));
 						Box boxToMoveCopy = new Box(boxToMove.getLetter(), boxToMove.getColor(),
 								new Coordinate(this.thisAgent.getCoordinate().getRow(),
-										this.thisAgent.getCoordinate().getColumn()));
+										this.thisAgent.getCoordinate().getColumn()), boxToMove.isInFinalPosition());
 						//Coordinate newBoxCoordinate = new Coordinate(this.thisAgent.getCoordinate().getRow(),
 						//					this.thisAgent.getCoordinate().getColumn());
 						//boxToMove.setCoordinate(newBoxCoordinate);
@@ -367,9 +368,9 @@ public class Node {
 			return false;
 		} else {
 			if(thisAgent == null || thisAgent.getColor() == null){
-				return !box.isInFinalPosition();
+				return true;
 			} else {
-				return !box.isInFinalPosition() && box.getColor().equals(thisAgent.getColor());
+				return box.getColor().equals(thisAgent.getColor());
 			}
 		}
 	}
@@ -499,18 +500,22 @@ public class Node {
 						Box pullBoxNew = new Box(pullBox.getLetter(), pullBox.getColor(), activeAgent.getCoordinate());
 						boxesByCoordinate.remove(pullBox.getCoordinate());
 
-						/*if(activeAgent.getCurrentSubGoal() != null && activeAgent.getCurrentSubGoal().getCoordinate().equals(pullBoxNew.getCoordinate()) && activeAgent.isClearMode()) {
+						if(activeAgent.getCurrentSubGoal() != null && activeAgent.getCurrentSubGoal().getCoordinate().equals(pullBoxNew.getCoordinate()) && !activeAgent.isClearMode()) {
 							pullBoxNew.setInFinalPosition(true);
 							System.err.println("Set in final position");
-						}*/
+						}
 						//System.err.println("Agent " + activeAgent.getId() + " moved box from " + boxRow + ", " + boxCol + " to " + activeAgent.getCoordinate().getRow() + ", " + activeAgent.getCoordinate().getColumn());
 						activeAgent.setCoordinate(newPos);
 						boxesByCoordinate.put(pullBoxNew.getCoordinate(), pullBoxNew);
 						for(Goal goal : goalsByCoordinate.values()){
 							if(goal.getCoordinate().equals(pullBox.getCoordinate()) && goal.getLetter() == Character.toLowerCase(pullBox.getLetter())){
 								if(!client.subGoals.contains(goal)){
+									if(goal.getPriority() > 1 ){
+										System.err.println("Priority was: " + goal.getPriority());
+										goal.setPriority(goal.getPriority() - 1);
+									}
 									client.subGoals.offer(goal);
-									System.err.println("subgoal " + goal.getLetter() + " at " + goal.getCoordinate().toString() + " reinserted in list");
+									System.err.println("subgoal " + goal.getLetter() + " at " + goal.getCoordinate().toString() + " reinserted in list. Priority: " + goal.getPriority());
 								}
 							}
 						}
@@ -528,16 +533,20 @@ public class Node {
 						Box pushBoxNew = new Box(pushBox.getLetter(), pushBox.getColor(), new Coordinate(newBoxRow, newBoxCol));
 						boxesByCoordinate.remove(pushBox.getCoordinate());
 						activeAgent.setCoordinate(newPos);
-						/*if(activeAgent.getCurrentSubGoal() != null && activeAgent.getCurrentSubGoal().getCoordinate().equals(pushBoxNew.getCoordinate()) && activeAgent.isClearMode()) {
+						if(activeAgent.getCurrentSubGoal() != null && activeAgent.getCurrentSubGoal().getCoordinate().equals(pushBoxNew.getCoordinate()) && !activeAgent.isClearMode()) {
 							pushBoxNew.setInFinalPosition(true);
 							System.err.println("Set in final position");
-						}*/
+						}
 						boxesByCoordinate.put(pushBoxNew.getCoordinate(), pushBoxNew);
 						for(Goal goal : goalsByCoordinate.values()){
 							if(goal.getCoordinate().equals(pushBox.getCoordinate()) && goal.getLetter() == Character.toLowerCase(pushBox.getLetter())){
 								if(!client.subGoals.contains(goal)){
+									if(goal.getPriority() > 1 ){
+										System.err.println("Priority was: " + goal.getPriority());
+										goal.setPriority(goal.getPriority() - 1);
+									}
 									client.subGoals.offer(goal);
-									System.err.println("subgoal " + goal.getLetter() + " at " + goal.getCoordinate().toString() + " reinserted in list");
+									System.err.println("subgoal " + goal.getLetter() + " at " + goal.getCoordinate().toString() + " reinserted in list. Priority: " + goal.getPriority());
 								}
 							}
 						}

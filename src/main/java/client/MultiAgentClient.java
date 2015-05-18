@@ -20,7 +20,7 @@ public class MultiAgentClient {
     private Boolean[] agentErrorState = null;
 
     // uncomment two lines below if testing without server and comment the third line
-    //FileReader fr = new FileReader("levels/MAsimple3.lvl");
+    //FileReader fr = new FileReader("levels/MAchallenge.lvl");
     //private BufferedReader in = new BufferedReader(fr);
     private BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 
@@ -183,12 +183,19 @@ public class MultiAgentClient {
                 char id = line.charAt(i);
                 if ('0' <= id && id <= '9') {				// Agents
                     Agent newAgent = new Agent(id, colors.get(id), new Coordinate(lineCount, i));
+                    if(newAgent.getColor() == null && colors.size() > 0){
+                        newAgent.setColor("blue");
+                    }
                     currentState.agents.add(newAgent);
                     agents.add(newAgent);
                 } else if (id == '+') {						// Walls
                     Node.walls.put(new Coordinate(lineCount, i), true);
                 } else if ('A' <= id && id <= 'Z') {		// Boxes
-                    currentState.addBox(new Box(id, colors.get(id), new Coordinate(lineCount, i)));
+                    Box newBox = new Box(id, colors.get(id), new Coordinate(lineCount, i));
+                    if(newBox.getColor() == null && colors.size() > 0){
+                        newBox.setColor("blue");
+                    }
+                    currentState.addBox(newBox);
                 } else if ('a' <= id && id <= 'z') {		// Goals
                     Node.addGoal(new Goal(id, new Coordinate(lineCount, i)));
                 }

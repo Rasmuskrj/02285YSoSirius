@@ -94,11 +94,11 @@ public class Agent {
 			cmdEffectsCoordinates = currentState.commandToCoordinates(pos, cmd);
 			pos = new Coordinate(cmdEffectsCoordinates.get(0).getRow(), cmdEffectsCoordinates.get(0).getColumn());
 			clearCoordinates.addAll(cmdEffectsCoordinates);
-			System.err.println(cmd.toString());
+			//System.err.println(cmd.toString());
 		}
 		cmd = act();
 		while(cmd != null){
-			System.err.println(cmd.toString());
+			//System.err.println(cmd.toString());
 			cmdEffectsCoordinates = currentState.commandToCoordinates(pos, cmd);
 			pos = new Coordinate(cmdEffectsCoordinates.get(0).getRow(), cmdEffectsCoordinates.get(0).getColumn());
 			clearCoordinates.addAll(cmdEffectsCoordinates);
@@ -120,6 +120,9 @@ public class Agent {
 
 	public void clearCells(ArrayList<Coordinate> coordinates, Node currentState, Agent sender){
 		System.err.println("Agent number " + id + " attempting to clear");
+		for(Coordinate cord : coordinates){
+			System.err.println(cord.toString());
+		}
 		clearMode = true;
 		solution.clear();
 		clearCords = coordinates;
@@ -132,10 +135,10 @@ public class Agent {
 		} else {
 			System.err.println("Solution could not be found");
 		}
-		System.err.println("Clear solution:");
-		for(Node n : plan){
-			System.err.println(n.action.toString());
-		}
+		//System.err.println("Clear solution:");
+		//for(Node n : plan){
+		//	System.err.println(n.action.toString());
+		//}
 		clearMode = false;
 		clearCords.clear();
 		quarantined = true;

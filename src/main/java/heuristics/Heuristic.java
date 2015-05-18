@@ -116,16 +116,24 @@ public abstract class Heuristic implements Comparator< Node > {
 				ret = (10 * boxDistance) + Math.abs(n.thisAgent.getCoordinate().getRow() - targetBox.getCoordinate().getRow()) +
 						Math.abs(n.thisAgent.getCoordinate().getColumn() - targetBox.getCoordinate().getColumn());
 				if(com != null && !(com.actType == Command.type.Move)){
+
 					//if the agent is moving boxes that is not the target box, the heuristic is worsened.
 					int boxRow = n.thisAgent.getCoordinate().getRow() + n.dirToRowChange(com.dir2);
 					int boxCol = n.thisAgent.getCoordinate().getColumn() + n.dirToColChange(com.dir2);
 					if(!(boxRow == targetBox.getCoordinate().getRow() && boxCol == targetBox.getCoordinate().getColumn() )){
 						ret += 30;
+						Box otherBox = n.getBoxesByCoordinate().get(new Coordinate(boxRow, boxCol));
+						if(otherBox != null && otherBox.isInFinalPosition()){
+							ret += 1000;
+						}
 					}
 				}
 				Box possibleBox = n.getBoxesByCoordinate().get(n.thisAgent.getCoordinate());
 				if(possibleBox != null){
 					ret += 200;
+					if(possibleBox.isInFinalPosition()){
+						ret += 2000;
+					}
 				}
 				for(Agent a : n.agents){
 					if(a.getId() != n.thisAgent.getId() && a.getCoordinate().equals(n.thisAgent.getCoordinate())){
@@ -172,7 +180,7 @@ public abstract class Heuristic implements Comparator< Node > {
 		}
 		Box possibleBox = n.getBoxesByCoordinate().get(n.thisAgent.getCoordinate());
 		if(possibleBox != null){
-			ret += 20;
+			ret += 40;
 		}
 		for(Agent a : n.agents){
 			if(a.getId() != n.thisAgent.getId() && a.getCoordinate().equals(n.thisAgent.getCoordinate())){
@@ -180,14 +188,19 @@ public abstract class Heuristic implements Comparator< Node > {
 			}
 		}
 		Command com2 = n.action;
-		if(com2 != null && com2.actType == Command.type.Push){
+		if(com2 != null && com2.actType != Command.type.Move){
 			int boxRow = n.thisAgent.getCoordinate().getRow() + n.dirToRowChange(com2.dir2);
 			int boxCol = n.thisAgent.getCoordinate().getColumn() + n.dirToColChange(com2.dir2);
 			possibleBox = n.getBoxesByCoordinate().get(new Coordinate(boxRow, boxCol));
 			if(possibleBox != null){
-				ret += 500;
+				ret += 40;
+				if(possibleBox.isInFinalPosition()){
+					ret += 500;
+				}
+
 			}
 		}
+
 		return ret;
 	}
 
