@@ -1,8 +1,9 @@
 package heuristics;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.PriorityQueue;
+import java.util.HashSet;
 
 import client.*;
 
@@ -149,11 +150,11 @@ public abstract class Heuristic implements Comparator< Node > {
 		int ret = 1;
 		boolean wrongBox = true;
 		for(Coordinate cord : n.thisAgent.getClearCords()){
+			Node.computeCellDistance(new HashSet<Coordinate>(Arrays.asList(cord)));
 			Box box = n.getBoxesByCoordinate().get(cord);
 			if(box != null && box.getColor() != null && !box.getColor().equals(n.thisAgent.getColor())){
 				ret += 20;
-				ret += Math.abs(n.thisAgent.getCoordinate().getRow() - box.getCoordinate().getRow()) +
-						Math.abs(n.thisAgent.getCoordinate().getColumn() - box.getCoordinate().getColumn());
+				ret += Node.cellDistance.get(cord).get(n.thisAgent.getCoordinate());
 				Command com = n.action;
 				if(com != null && !(com.actType == Command.type.Move)){
 					//if the agent is moving boxes that is not the target box, the heuristic is worsened.
