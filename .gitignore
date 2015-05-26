@@ -5,3 +5,5 @@
 /bin
 .settings/
 src/main/main.iml
+report/*.log
+report/*.aux
