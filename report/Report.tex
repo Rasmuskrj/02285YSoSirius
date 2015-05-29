@@ -17,7 +17,7 @@
 \nocopyright
 \begin{document}
 % Title and author information
-\title{Assignment 3 report - GroupYSoSirius \\ 02285 AI \& MAS}
+\title{Assignment 3 report - Group: YSoSirius \\ 02285 AI \& MAS}
 \author{Bogdan Sorlea \\ s121075 \And Rasmus Kr{\o}yer J{\o}rgensen \\ s090487}
 \maketitle
 \begin{abstract}
@@ -36,7 +36,27 @@ Stuff about the theories that our program is based on.
 Research needs to be done. This section could be moved.
 
 \section{Method}
-Describe how our client works, but NOT the implementation.
+This section contains a detailed explanation of the algorithm our client uses. Each step will be explained in its own section. There will less focus on the theory behind this solution as this should be clear from the previous section.
+
+(Here should be a flowchart that shows how the client works)
+
+\subsection{Preprocessing}
+The first step opon startup is the preprocessing step. This step is not part of the core loop of the client and will only be executed once. In this part we first read the input to the server to create our perception of the map. After this we perform a simple form of goal decomposition. Each goal cell is treated as a independent goal that must be achieved. Then for each goal we calculate the goal priority. The priority is based on whether or not other goal cells block this goal cell - that is if by solving the other goals you will then block access to this goal. Once each goal cell has a priority we then calculate the exact distance from each cell to each goal cell. This will help us have a more efficient heuristic when we want to know the distance from the boxes to the goal cells.
+
+\subsection{Find solution}
+In relation to the BDI architecture this step involes updating the Beliefs, Desires and Intention of each agent. In this step each agent will first update their desire, which in our context is to find a new subgoal (found from the goal decomposition mentioned above). If the agent does already have a goal and this is not yet achieved then no new goal is given. If the agent is not done and is not quarantined (explained later) then it is given an updated version of the map and the positions of agents and boxes. From this state the agent uses a graph search tree with a heuristic function to find a state that satisfies its goal. During this search process the agent assumes that the map stays unchanges, except for the changes made by the agent. The agent also cannot see obstacles in the form of boxes of another color or other agents, so it will plan as if they are not there (but these can still influence the heuristic function).
+
+\subsubsection{Heuristic function}
+The heuristic function we use is a relaxed, admissable heuristic function. It uses the A* as its basis which means that it will add a $g()$ function to all heuristics. The $g()$ functions return the number of steps to the initial state of the search tree. The $h()$ part of the heuristic function is found in the following way. It will find the box closest to the goal cell that the agent is trying to solve and then find the distance between the two, using the goal distance map we calculated during the preprocessing. It will then find the manhatten distance between the agent and the box chosen and add that to the earlier distance found and this will be the foundation of the returned value. There are few other things that influence the heuristic:
+\begin{itemize}
+\item Moving a box that is not the box found earlier will add to the returned value
+\item Moving a box or the agent into a cell the is occupied by another box or agent will add to the returned value.
+\item Moving a box or the agent into a cell that is a solved goal cell will add greatly to the returned value.
+\end{itemize}
+Since the search function will chose the state whose heuristic function returns the lowest value, adding to the value returned effectively discourages the agent from chosing that state. \textit{Possibly explain why heuristic is admisable and relaxed}.
+
+\subsection{Execute plan}
+Once each agent has a plan the will solve its current subgoal, the plan will be executed. The loop that executes the plan will terminate if the server responds \textit{false} to any of the actions given - that is if the action an agent is trying to do is not possible. The client has a blackboard architecture and has a shared variable that holds the current state of the map. This variable is updated each time and agent has performed an action successfully. It is the same variable that an agent copies when it updates its beliefs in the previous stage. Once all agents have executed their plan the loop terminated, assuming it was not terminated prematurely because of a conflict. 
 
 \section{Results}
 Discuss our results.
@@ -46,6 +66,7 @@ Why did we do what we did? What was good and bad etc.
 
 \section{Future work}
 How could we most effectively improve our client.
+
 
 
 \section{Bibliography}
