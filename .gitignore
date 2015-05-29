@@ -7,5 +7,5 @@
 src/main/main.iml
 report/*.log
 report/*.aux
-*.pdf
+report/Report.pdf
 *.gz
