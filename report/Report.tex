@@ -7,9 +7,12 @@
 \usepackage{times}
 \usepackage{helvet}
 \usepackage{courier}
+\usepackage{graphicx}
 \frenchspacing
 \setlength{\pdfpagewidth}{8.5in}
 \setlength{\pdfpageheight}{11in}
+
+\graphicspath{{./image/}}
 
 % Section numbers. 
 \setcounter{secnumdepth}{2}  
@@ -57,6 +60,38 @@ Since the search function will chose the state whose heuristic function returns 
 
 \subsection{Execute plan}
 Once each agent has a plan the will solve its current subgoal, the plan will be executed. The loop that executes the plan will terminate if the server responds \textit{false} to any of the actions given - that is if the action an agent is trying to do is not possible. The client has a blackboard architecture and has a shared variable that holds the current state of the map. This variable is updated each time and agent has performed an action successfully. It is the same variable that an agent copies when it updates its beliefs in the previous stage. Once all agents have executed their plan the loop terminated, assuming it was not terminated prematurely because of a conflict. 
+
+\subsection{Distance map}
+\textbf{Will have to move this section around}
+
+While incrementally developing the solution, we took the decision to simplify as much as possible, wherever it was possible. One such simplifications relied on pre-computing a distance map for each of the goal cells. The rationale behind it was that if we could obtain a solution that is not computationally intensive for computing the minimum distances from each cell to each goal cell, as the goal cells stay constant (a goal cannot be moved), then we would have a very precise metric to include in our heuristic function, which would ultimately make the solution more robust.
+
+For computing this distance map we took an approach based on starting from the goal cell and, using the 4-vicinity, continuously add neighbors into a frontier list, that would be continuously processed until empty. The processing consists of always storing the minimum distance to a specific cell, which is based on the distance to its parent, incremented by one.
+
+The usage of the frontier data structure and of the way the distance is computed can be considered to be structurally similar to how the best-first strategy algorithm work - which itself is an important part of the solution, in exploring the state space.
+
+Specific measures were taken in order to increase the performance of the algorithm, most important one being a check based on which the iteration would just continue if a specific cell has been already processed (i.e. due to a different - and therefore possibly shorter - path from the goal to that specific cell).
+
+The result of applying the aforementioned algorithm is a map of distances similar to the one in Figure \ref{fig:distmapb}, which corresponds for the level in Figure \ref{fig:distmaporig} and the goal denoted by \textit{b}.
+
+\begin{figure}[ht]
+\centering
+\begin{minipage}[b]{0.45\linewidth}
+	\centering
+	\includegraphics[scale=0.4]{distmap_orig.JPG}
+	\caption{Original level}
+	\label{fig:distmaporig}
+\end{minipage}
+\quad
+\begin{minipage}[b]{0.45\linewidth}
+	\centering
+	\includegraphics[scale=0.5]{distmap_b.JPG}
+	\caption{Distances to \textit{b}}
+	\label{fig:distmapb}
+\end{minipage}
+\end{figure}
+
+It is noteworthy that the algorithm itself does not take into account situations where a level is split into two or more disjoint areas, where one area is not reachable from another and this might lead to exceptions in some levels. Therefore, this scenario can be improved by map initialization to an arbitrary flag that indicates that the cell has not been reached in any way from the goal.
 
 \section{Results}
 Discuss our results.
