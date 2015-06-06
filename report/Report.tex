@@ -48,7 +48,7 @@ This section contains a detailed explanation of the algorithm our client uses. E
 \end{figure}
 
 \subsection{Preprocessing}
-The first step opon startup is the preprocessing step. This step is not part of the core loop of the client and will only be executed once. In this part we first read the input to the server to create our perception of the map. After this we perform a simple form of goal decomposition. Each goal cell is treated as a independent goal that must be achieved. Then for each goal we calculate the goal priority. The priority is based on whether or not other goal cells block this goal cell - that is if by solving the other goals you will then block access to this goal. Once each goal cell has a priority we then calculate the exact distance from each cell to each goal cell. This will help us have a more efficient heuristic when we want to know the distance from the boxes to the goal cells.
+The first step upon start-up is the pre-processing step. This step is not part of the core loop of the client and will only be executed once. In this part we first read the input to the server to create our perception of the map. After this we perform a simple form of goal decomposition. Each goal cell is treated as a independent goal that must be achieved. Then for each goal we calculate the goal priority. The priority is based on whether or not other goal cells block this goal cell - that is if by solving the other goals you will then block access to this goal. Once each goal cell has a priority we then calculate the exact distance from each cell to each goal cell. This will help us have a more efficient heuristic when we want to know the distance from the boxes to the goal cells.
 
 \subsubsection{Distance map}
 
@@ -82,16 +82,16 @@ The result of applying the aforementioned algorithm is a map of distances simila
 It is noteworthy that the algorithm itself does not take into account situations where a level is split into two or more disjoint areas, where one area is not reachable from another and this might lead to exceptions in some levels. Therefore, this scenario can be improved by map initialization to an arbitrary flag that indicates that the cell has not been reached in any way from the goal.
 
 \subsection{Find solution}
-In relation to the BDI architecture this step involes updating the Beliefs, Desires and Intention of each agent. In this step each agent will first update their desire, which in our context is to find a new subgoal (found from the goal decomposition mentioned above). If the agent does already have a goal and this is not yet achieved then no new goal is given. If the agent is not done and is not quarantined (explained later) then it is given an updated version of the map and the positions of agents and boxes. From this state the agent uses a graph search tree with a heuristic function to find a state that satisfies its goal. During this search process the agent assumes that the map stays unchanges, except for the changes made by the agent. The agent also cannot see obstacles in the form of boxes of another color or other agents, so it will plan as if they are not there (but these can still influence the heuristic function).
+In relation to the BDI architecture this step involves updating the Beliefs, Desires and Intention of each agent. In this step each agent will first update their desire, which in our context is to find a new sub-goal (found from the goal decomposition mentioned above). If the agent does already have a goal and this is not yet achieved then no new goal is given. If the agent is not done and is not quarantined (explained later) then it is given an updated version of the map and the positions of agents and boxes. From this state the agent uses a graph search tree with a heuristic function to find a state that satisfies its goal. During this search process the agent assumes that the map stays unchanged, except for the changes made by the agent. The agent also cannot see obstacles in the form of boxes of another color or other agents, so it will plan as if they are not there (but these can still influence the heuristic function).
 
 \subsubsection{Heuristic function}
-The heuristic function we use is a relaxed, admissable heuristic function. It uses the A* as its basis which means that it will add a $g()$ function to all heuristics. The $g()$ functions return the number of steps to the initial state of the search tree. The $h()$ part of the heuristic function is found in the following way. It will find the box closest to the goal cell that the agent is trying to solve and then find the distance between the two, using the goal distance map we calculated during the preprocessing. It will then find the manhatten distance between the agent and the box chosen and add that to the earlier distance found and this will be the foundation of the returned value. There are few other things that influence the heuristic:
+The heuristic function we use is a relaxed, admissible heuristic function. It uses the A* as its basis which means that it will add a $g()$ function to all heuristics. The $g()$ functions return the number of steps to the initial state of the search tree. The $h()$ part of the heuristic function is found in the following way. It will find the box closest to the goal cell that the agent is trying to solve and then find the distance between the two, using the goal distance map we calculated during the pre-processing. It will then find the Manhattan distance between the agent and the box chosen and add that to the earlier distance found and this will be the foundation of the returned value. There are few other things that influence the heuristic:
 \begin{itemize}
 \item Moving a box that is not the box found earlier will add to the returned value
 \item Moving a box or the agent into a cell the is occupied by another box or agent will add to the returned value.
 \item Moving a box or the agent into a cell that is a solved goal cell will add greatly to the returned value.
 \end{itemize}
-Since the search function will chose the state whose heuristic function returns the lowest value, adding to the value returned effectively discourages the agent from chosing that state. \textit{Possibly explain why heuristic is admisable and relaxed}.
+Since the search function will chose the state whose heuristic function returns the lowest value, adding to the value returned effectively discourages the agent from choosing that state. \textit{Possibly explain why heuristic is admissible and relaxed}.
 
 \subsection{Execute plan}
 Once each agent has a plan the will solve its current subgoal, the plan will be executed. The loop that executes the plan will terminate if the server responds \textit{false} to any of the actions given - that is if the action an agent is trying to do is not possible. The client has a blackboard architecture and has a shared variable that holds the current state of the map. This variable is updated each time and agent has performed an action successfully. It is the same variable that an agent copies when it updates its beliefs in the previous stage. Once all agents have executed their plan the loop terminated, assuming it was not terminated prematurely because of a conflict. 
@@ -104,8 +104,41 @@ Discuss our results.
 Why did we do what we did? What was good and bad etc.
 
 \section{Future work}
-How could we most effectively improve our client.
+For future work we consider some of the ideas we had during the implementation, but for various reasons we decided not to include them. We will be describing the ideas, the benefits and well as the disadvantages and other notable details.
 
+\subsection{Reducing the state space}
+One idea we considered at an early stage in the project was to try and reduce the state-space of each level, thus reducing the complexity of searching in this state-space. The abstract description on how to achieve this is by removing some of the cells in the level, for example by marking them (in a separate data structure than the one storing the original level) as being walls, such that the overall function of the level is not perturbed (i.e. all paths from agents to boxes and from boxes to goals are still valid after running the algorithm that reduces the state-space).
+
+Applying such an algorithm will result in a level with more wall cells, therefore less cells that can be occupied by an object (box, agent or goal), resulting in a decreased complexity while searching, by reducing the base of the exponential function that defines this complexity (by the number of converted cells), therefore reducing the search's branching factor.
+
+While this improves performance while searching, it has the disadvantage of making conflict resolution more cumbersome, unless special procedures are considered in this case. One such procedure can be conflict solving in the original state-space (in the original layout of the level), while all other search taking place in the reduced state-space. Another consequence of such an implementation is an increased probability of conflicts, as the chances of bottlenecks being formed are higher.
+
+This idea can be implemented based on an algorithm in Image Processing and Computer Vision called "dilation", a morphological step used in various algorithms, e.g. removing noise from an image. The details of this algorithm can be consulted in [make proper reference: http://users.utcluj.ro/~igiosan/Resources/PI/L7/PI-L7e.pdf], but in our case it translates to a simple routine: it would mark a non-wall cell as wall cell if at least one of the cell's neighbors in its 4-vicinity is a wall cell. The union of this set of newly marked wall cells and the walls in the original level (or walls in the previous iteration, if applied iteratively) will form the final walls in the level.
+
+This is an efficient implementation, not computationally complex, but however, it has some disadvantages we are still thinking how to best overcome. The disadvantages are given by the complex nature of the reasoning that will assure that at each dilation iteration we are not isolating any of the cells of interest, i.e. boxes, goals or agents. While we have thought about this problem and we have some ideas on how to overcome it, we would first have to experiment with some strategies before we would be able to strongly claim any solution. Therefore, we are just raising awareness on the issue but not offering a concrete solution at this time.
+
+On a related topic, another challenge to iterative dilation is reasoning about when to stop dilating the walls of the level. This is also something to experiment with and therefore no solution would be provided here.
+
+An example of this level transformation works can be seen in Figure \ref{fig:level_before_dilation} and Figure \ref{fig:level_after_dilation}, where in Figure \ref{fig:level_before_dilation} we see the original walls of the level and in Figure \ref{fig:level_after_dilation} we see the final walls after the dilation (run for 1 iteration, based on the 4-vicinity kernel). Note that in Figure \ref{fig:level_after_dilation} we have ignored the walls that would be computed outside the bounds of the original level, as are they deemed irrelevant.
+
+\begin{figure}[!htb]
+\centering
+\begin{minipage}[b]{0.45\linewidth}
+	\centering
+	\includegraphics[scale=0.4]{level_before_dilation.JPG}
+	\caption{Walls before dilation}
+	\label{fig:level_before_dilation}
+\end{minipage}
+\quad
+\begin{minipage}[b]{0.45\linewidth}
+	\centering
+	\includegraphics[scale=0.5]{level_after_dilation.JPG}
+	\caption{Wall after dilation (1 iteration)}
+	\label{fig:level_after_dilation}
+\end{minipage}
+\end{figure}
+
+We have decided not to proceed with experimenting and implementing this solution at an early stage in the project. There are two main reasons behind this decision: we saw this as possibly complicated in terms of the algorithm, provided that all functional safety measures are to be taken in regards to the level and we found other ideas as more efficient (e.g. computing a distance map for each of the goals) and therefore considered that such a solution might not bring a huge benefit. However, it is an interesting idea that is worth an investigation, as the complexity of the resulting algorithm would most likely be fairly small, \textit{O(m*n)}, where \textit{m} and \textit{n} are the dimensions of the original level.
 
 
 \section{Bibliography}
