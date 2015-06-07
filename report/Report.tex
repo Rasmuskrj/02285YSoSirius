@@ -24,13 +24,19 @@
 \author{Bogdan Sorlea \\ s121075 \And Rasmus Kr{\o}yer J{\o}rgensen \\ s090487}
 \maketitle
 \begin{abstract}
-The abstract goes here. Please read this document carefully before preparing your manuscript.
-
-To ensure that all reports have a uniform appearance corresponding to published papers at the major AI conferences (like IJCAI and AAAI), authors must adhere to the following instructions. 
+This paper presents YSoSirius Group's solution to the 02285 - AI \& MAS 2015 competition. We will be describing the theoretical background for our solution, the methods and the implementation, discuss the results and reason about how to improve this solution. Our approach is based on several ideas which include goal decomposition, associating priorities to goals, pre-computing static metrics to aid with improving the heuristics function and conflict solving.
 \end{abstract}
 
 \section{Introduction}
-Introduction goes here.
+In this paper we are presenting our solution to the 02285 - AI \& MAS 2015 competition. The aim of the competition is to find clever and efficient solutions to multi-agent problems in Artificial Intelligence.
+
+The present competition presents the challenge of designing and tuning a system for solving multi-agent worlds (levels) in which various agents (represented by robots) have the ability to move with the aim of pushing or pulling various items ("boxes") in order to move them to their final position ("goal").
+
+This problem has a lot of relevance in applications that require the automation of human-less deliveries of goods and the solutions can be applied to a plethora of situations, from warehousing solutions to hospital supply planning and other specialized delivery systems.
+
+We have chosen a solution based on goal decomposition, pre-computing static data that aids in searching and conflict resolution. We have started with optimizing the solution for a single-agent scenario, in which we chose to prioritize goals based on how much a goal was blocked by others - to help with reducing conflicts, we pre-computed "distance map" metrics for each goal - to improve the heuristics function, especially since this was static data. 
+
+Since this implementation was efficient enough, we decided to move onto solving the multi-agent levels as best as possible, although we had other ideas on how to improve searching. However, we are discussing these solutions in the \textit{Future Work} section. For the multi-agent levels we focused on efficiently doing conflict solving, the process around this being described in the \textit{Methods} chapter.
 
 \section{Background}
 Stuff about the theories that our program is based on.
@@ -40,12 +46,6 @@ Research needs to be done. This section could be moved.
 
 \section{Method}
 This section contains a detailed explanation of the algorithm our client uses. Each step will be explained in its own section. There will less focus on the theory behind this solution as this should be clear from the previous section.
-
-\begin{figure}[!htb]
-\centering
-\includegraphics[width=\linewidth]{ClientFlowchart.pdf}
-\caption{Flowchart of the base client loop}
-\end{figure}
 
 \subsection{Preprocessing}
 The first step upon start-up is the pre-processing step. This step is not part of the core loop of the client and will only be executed once. In this part we first read the input to the server to create our perception of the map. After this we perform a simple form of goal decomposition. Each goal cell is treated as a independent goal that must be achieved. Then for each goal we calculate the goal priority. The priority is based on whether or not other goal cells block this goal cell - that is if by solving the other goals you will then block access to this goal. Once each goal cell has a priority we then calculate the exact distance from each cell to each goal cell. This will help us have a more efficient heuristic when we want to know the distance from the boxes to the goal cells.
@@ -101,7 +101,9 @@ Once each agent has a plan the will solve its current subgoal, the plan will be 
 Discuss our results.
 
 \section{Discussion}
-Why did we do what we did? What was good and bad etc.
+... Moved this from Introduction, where I initially started writing it:
+
+where, due to the pre-computation of what we call "distance map" the solutions to these levels were quite optimal in terms of time. It is noteworthy that we also tried to prioritize the solving of the goals based on situations where one goal might be blocked by another (or several) and, although efficient for most levels, this has proven catastrophic for levels like "SAboxesOfHanoi.lvl". Nonetheless, we decided to continue with this solution, both due to time and code complexity limitations.
 
 \section{Future work}
 For future work we consider some of the ideas we had during the implementation, but for various reasons we decided not to include them. We will be describing the ideas, the benefits and well as the disadvantages and other notable details.
@@ -140,6 +142,18 @@ An example of this level transformation works can be seen in Figure \ref{fig:lev
 
 We have decided not to proceed with experimenting and implementing this solution at an early stage in the project. There are two main reasons behind this decision: we saw this as possibly complicated in terms of the algorithm, provided that all functional safety measures are to be taken in regards to the level and we found other ideas as more efficient (e.g. computing a distance map for each of the goals) and therefore considered that such a solution might not bring a huge benefit. However, it is an interesting idea that is worth an investigation, as the complexity of the resulting algorithm would most likely be fairly small, \textit{O(m*n)}, where \textit{m} and \textit{n} are the dimensions of the original level.
 
+\subsection{Improving the informed search}
+We also considered various strategies for improving the way the heuristics function is computed (by incorporating various metrics or flags into the heuristics function). One such strategy is to be applied only for the sub-goal of an agent reaching a box, as the sub-goal of the agent and box reaching the goal is accurately and easily solvable by the distance map computed for each goal.
+
+As the heuristic function relies on Manhattan-distance-like metric, this is not in any way helpful if any direct path between the agent (source) and box (destination) is blocked by walls - as all the actual paths will be searched last, i.e. after the direct paths are unsuccessfully searched.
+
+Therefore, to improve situations like these we could either do ad-hoc quick searches for blocked paths between a source and a destination coordinate, or such computations could be done globally, for all the walls within the level, as a pre-processing step. However, this second approach might be too cumbersome to compute and therefore inefficient, especially since it would compute such a flag ("is there at least one direct path between source and destination?") for each (source, destination) pair, even if most of them would not be ever used.
+
+However, computing such a flag on-demand, while storing the relevant information in a constructive way, such that successive computations can rely - at least in part - on previous computations' data, might be efficient enough as to stand as a mid-point in terms of computation between levels with a lot of direct-path sub-goals (in which the search is done effectively) and levels with few to none such direct-paths (in which the search is quite inefficient and therefore time and resource consuming).
+
+The algorithm is to be implemented in such a way as to start from one end (e.g. source) and move towards the destination, continuously checking if each neighbor of a specific cell in the two valid directions (directions that get the position closer to the destination, on either the horizontal or vertical lines) is still reachable. If unreachable, it is due to the neighbor being a wall and therefore any further computation with that neighboring cell is stopped - by not adding that neighbor to a "frontier" list of cells that are still valid. By doing this search as BFS and running until the frontier list is empty, we can obtain an answer of whether the destination is directly-reachable from source. At the end of the algorithm, some post-processing should be done, as to globally save the information on which cells could not be reached (and from which cells) and at each iteration relevant information on the progress should be globally saved, as it might be used by any subsequent checks. This reflects the fact that a check from source to destination can be decomposed in many adjacent checks between two cells lying in the space between the source and destination, and any of the computed flags in a specific computation might be used in a subsequent computation to reduce the complexity. Therefore the algorithm can be viewed and should be implemented as a \textit{Divide et Impera} problem, where the results of sub-problems are cached to reduce complexity of subsequent runs.
+
+Based on this flag a decision to start searching in the opposite direction than the direct moves can be taken, whenever this flag is not favoring searching by direct Manhattan procedure. In terms of heuristics, this is accomplished by introducing a penalty to the direct Manhattan metric whenever this check fails.
 
 \section{Bibliography}
 Your bibliography should be formatted using \texttt{aaai.bst} as this document. Citations are included like so~\cite{book2015}. Multiple citations appear like this~\cite{conf,article}. All references to be cited should be included in BibTeX format in the file \texttt{bibliography.bib}.\footnote{Almost anything ever published can be found in BibTeX format via Google Scholar, but if using this method, you need to check the BibTeX entry for sanity before including it in the \texttt{bibliography.bib} file.}
@@ -150,5 +164,11 @@ Your bibliography should be formatted using \texttt{aaai.bst} as this document. 
 \bibliographystyle{aaai}
 \bibliography{bibliography}
 
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\linewidth]{clientflowchart.jpg}
+\caption{Flowchart of the base client loop}
+\label{fig:clientflowchart}
+\end{figure}
 
 \end{document}
