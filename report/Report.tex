@@ -41,9 +41,9 @@ Since this implementation was efficient enough, we decided to move onto solving 
 \section{Background}
 The design of our client is based on several of the theories learned in this course. The main one is the the BDI architecture even though our client only partly implements the model. 
 
-As the \textit{desires} we have all the goal cells that needs to be solved. As the \textit{intentions} we have the specific goal cell that an agent wants to solve. Below this is called a sub-goal. The \textit{beliefs} of the agents is a copy of a variable that holds the current state of the map with all agents and boxes. We use a blackboard achitecture, so the original \textit{currentState} varialbe is always available to all agents and it is updated each time an action is taken. There is little difference between the \textit{perceptions} and \textit{beliefs} of an agent in our solution.
+As the \textit{desires} we have all the goal cells that needs to be solved. As the \textit{intentions} we have the specific goal cell that an agent wants to solve. Below this is called a sub-goal. The \textit{beliefs} of the agents is a copy of a variable that holds the current state of the map with all agents and boxes. We use a blackboard architecture, so the original \textit{currentState} variable is always available to all agents and it is updated each time an action is taken. There is little difference between the \textit{perceptions} and \textit{beliefs} of an agent in our solution.
 
-Our client implements \textit{plan monitoring} and \textit{online replaning}. We initially considered using offline planning with plan merging, but the possible complexity of the solutions seemed to be cumbersome to work with. We have also implemented \textit{goal monitoring}. Even though a sub-goal is always assumed to be achievable, a plan to solve it might be dropped in favor or conflict resolution and replanning. A feature that our client does not have is \textit{online deliberation}, since we believed it would not be worth it in terms of computational ressources. 
+Our client implements \textit{plan monitoring} and \textit{online replanning}. We initially considered using offline planning with plan merging, but the possible complexity of the solutions seemed to be cumbersome to work with. We have also implemented \textit{goal monitoring}. Even though a sub-goal is always assumed to be achievable, a plan to solve it might be dropped in favor or conflict resolution and replanning. A feature that our client does not have is \textit{online deliberation}, since we believed it would not be worth it in terms of computational resources. 
 
 \section{Related work}
 Research needs to be done. This section could be moved.
@@ -53,7 +53,7 @@ This section contains a detailed explanation of the algorithm our client uses. E
 
 \begin{figure}[!htb]
 \centering
-\includegraphics[scale=0.45]{ClientFlowchart.pdf}
+\includegraphics[scale=0.47]{ClientFlowchart.pdf}
 \caption{Flowchart of the base client loop}
 \label{fig:clientFlowchart}
 \end{figure}
@@ -116,15 +116,21 @@ Because the next action will always only occupy one new cell, it will also alway
 
 The heuristic function used to find a plan for clearing cells is different than the one used to find a plan for achieving sub-goals. It is also an A* heuristic, but here we calculate the aggregated distance to the cells that needs to be cleared, as well as adding a big reward in terms of heuristic value when a cell is cleared. This function also tries to encourage the agent to go around obstacles that it cannot move.
 
-Once all agents that needs to clear have a plan, the plan will be executed in the same manner as descibed earlier. Again the loop is terminated when all agents have finished their plans, or when an agents action results in an error. This means that an agent resolving a conflict cannot get help from other agents in case it is blocked. This approach has some issues which we will discuss in the discussion section.
+Once all agents that needs to clear have a plan, the plan will be executed in the same manner as described earlier. Again the loop is terminated when all agents have finished their plans, or when an agents action results in an error. This means that an agent resolving a conflict cannot get help from other agents in case it is blocked. This approach has some issues which we will discuss in the discussion section.
 
 If an agent has to move a box that is solving a goal cell, then the goal cell is added again to the list of sub-goals but with a lower priority.
 
-When an agent finds a clearing solution it will also be flagged as quarantined, which means it will not search for a solution for its sub-goal in the next iteration of the loop. This is in order to ensure that the agent will not intervene with the path of the agent it has just cleard for. When the \textit{Execute Plan} phase is done, all agents are unflagged as quarantined, if the agent that quarantined them successfully finished its plan. 
+When an agent finds a clearing solution it will also be flagged as quarantined, which means it will not search for a solution for its sub-goal in the next iteration of the loop. This is in order to ensure that the agent will not intervene with the path of the agent it has just cleared for. When the \textit{Execute Plan} phase is done, all agents are unflagged as quarantined, if the agent that quarantined them successfully finished its plan. 
 
 
 \section{Results}
-Discuss our results.
+Although during the implementation phase we obtained solutions within the time limit for all the Single Agent levels and most of the Multi-Agent levels, while running on the competition levels we obtained average results. Besides the SA and MA levels that no team was able to complete, other levels posed a challenge and were hard to complete.
+
+A synthesis of how our solution performed, both in relation to other solution as well as in terms of absolute metrics is available in [INSERT REFERENCE TO "Results of competition, 02285 F15"]. Some of the SA and MA levels have proved too complex for our implementation to successfully solve them, while others have posed technical challenges in the form of exceptions thrown due to level complexities that we have not incorporated in our design.
+
+For most of the SA levels our implementation tried to find a solution, albeit unsuccessful. The levels that were deemed successful have taken a lot of computation time to complete, thus indicating level complexities for which our implementation was not optimized. Relative to other implementations, ours proved to be median (in terms of actions used) to good (in terms of used actions).
+
+As opposed to the SA levels, which our implementation managed to solve better, our solution performed marginally on the MA levels, if assessed absolutely (in terms of completed levels, time and used actions). However, relatively to other implementations, our solution proved again to be median.
 
 \section{Discussion}
 ... Moved this from Introduction, where I initially started writing it:
