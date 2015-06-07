@@ -46,7 +46,11 @@ As the \textit{desires} we have all the goal cells that needs to be solved. As t
 Our client implements \textit{plan monitoring} and \textit{online replanning}. We initially considered using offline planning with plan merging, but the possible complexity of the solutions seemed to be cumbersome to work with. We have also implemented \textit{goal monitoring}. Even though a sub-goal is always assumed to be achievable, a plan to solve it might be dropped in favor or conflict resolution and replanning. A feature that our client does not have is \textit{online deliberation}, since we believed it would not be worth it in terms of computational resources. 
 
 \section{Related work}
-Research needs to be done. This section could be moved.
+In [Insert reference to http://www.engr.colostate.edu/~hj/conferences/258.pdf], the authors describe how to address the problem of solving three types of sub-goals: independent sub-goals - a sub-goal that when reached will not increase the difficulty of other goals, serializable sub-goals - sub-goals that can be reached without violating any conditions of sub-goals previously met and non-serializable sub-goals - sub-goals that do not follow the aforementioned rules.
+
+As having a correct ordering among sub-goals is critical to the performance of the algorithm, it is important to pre-process the initial state based on allowed actions in order to achieve an optimal ordering. This proves difficult while tackling the problem of non-serializable sub-goals and therefore the authors introduce a strategy of dividing goals into a sequence of serializable sub-goals in a recursive manner, while defining a strict ordering of these sub-goals.
+
+
 
 \section{Method}
 This section contains a detailed explanation of the algorithm our client uses. Each step will be explained in its own section. There will less focus on the theory behind this solution as this should be clear from the previous section.
@@ -62,6 +66,8 @@ Figure \ref{fig:clientFlowchart} shows a visual reprensentation of the main clie
 
 \subsection{Preprocessing}
 The first step upon start-up is the pre-processing step. This step is not part of the core loop of the client and will only be executed once. In this part we first read the input to the server to create our perception of the map. After this we perform a simple form of goal decomposition. Each goal cell is treated as a independent goal that must be achieved. Then for each goal we calculate the goal priority. The priority is based on whether or not other goal cells block this goal cell - that is if by solving the other goals you will then block access to this goal. Once each goal cell has a priority we then calculate the exact distance from each cell to each goal cell. This will help us have a more efficient heuristic when we want to know the distance from the boxes to the goal cells.
+
+We have decided not to implement planning with recursive sub-goals as introduced in [Insert reference to http://www.engr.colostate.edu/~hj/conferences/258.pdf], both due to time limitations and to reduce complexity of the implementation until a later development iteration.
 
 \subsubsection{Distance map}
 
@@ -173,6 +179,9 @@ An example of this level transformation works can be seen in Figure \ref{fig:lev
 \end{figure}
 
 We have decided not to proceed with experimenting and implementing this solution at an early stage in the project. There are two main reasons behind this decision: we saw this as possibly complicated in terms of the algorithm, provided that all functional safety measures are to be taken in regards to the level and we found other ideas as more efficient (e.g. computing a distance map for each of the goals) and therefore considered that such a solution might not bring a huge benefit. However, it is an interesting idea that is worth an investigation, as the complexity of the resulting algorithm would most likely be fairly small, \textit{O(m*n)}, where \textit{m} and \textit{n} are the dimensions of the original level.
+
+\subsection{Planning with recursive sub-goals}
+Another improvement to our planning algorithm is based on adopting the recursive sub-goals technique described in [Insert reference to http://www.engr.colostate.edu/~hj/conferences/258.pdf]. It has been previously shown that level complexities are critical to the way our implementation works and therefore it is important to use a sub-goal serialization procedure that is as optimal as possible. By improving the pre-processing and replanning steps based on these type of decomposition, we could obtain reduced difficulty in solving some goals, which would eventually reduce complexity of the planning.
 
 \subsection{Improving the informed search}
 We also considered various strategies for improving the way the heuristics function is computed (by incorporating various metrics or flags into the heuristics function). One such strategy is to be applied only for the sub-goal of an agent reaching a box, as the sub-goal of the agent and box reaching the goal is accurately and easily solvable by the distance map computed for each goal.
