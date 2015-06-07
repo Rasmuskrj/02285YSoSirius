@@ -39,13 +39,26 @@ We have chosen a solution based on goal decomposition, pre-computing static data
 Since this implementation was efficient enough, we decided to move onto solving the multi-agent levels as best as possible, although we had other ideas on how to improve searching. However, we are discussing these solutions in the \textit{Future Work} section. For the multi-agent levels we focused on efficiently doing conflict solving, the process around this being described in the \textit{Methods} chapter.
 
 \section{Background}
-Stuff about the theories that our program is based on.
+The design of our client is based on several of the theories learned in this course. The main one is the the BDI architecture even though our client only partly implements the model. 
+
+As the \textit{desires} we have all the goal cells that needs to be solved. As the \textit{intentions} we have the specific goal cell that an agent wants to solve. Below this is called a sub-goal. The \textit{beliefs} of the agents is a copy of a variable that holds the current state of the map with all agents and boxes. We use a blackboard achitecture, so the original \textit{currentState} varialbe is always available to all agents and it is updated each time an action is taken. There is little difference between the \textit{perceptions} and \textit{beliefs} of an agent in our solution.
+
+Our client implements \textit{plan monitoring} and \textit{online replaning}. We initially considered using offline planning with plan merging, but the possible complexity of the solutions seemed to be cumbersome to work with. We have also implemented \textit{goal monitoring}. Even though a sub-goal is always assumed to be achievable, a plan to solve it might be dropped in favor or conflict resolution and replanning. A feature that our client does not have is \textit{online deliberation}, since we believed it would not be worth it in terms of computational ressources. 
 
 \section{Related work}
 Research needs to be done. This section could be moved.
 
 \section{Method}
 This section contains a detailed explanation of the algorithm our client uses. Each step will be explained in its own section. There will less focus on the theory behind this solution as this should be clear from the previous section.
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.45]{ClientFlowchart.pdf}
+\caption{Flowchart of the base client loop}
+\label{fig:clientFlowchart}
+\end{figure}
+
+Figure \ref{fig:clientFlowchart} shows a visual reprensentation of the main client loop.
 
 \subsection{Preprocessing}
 The first step upon start-up is the pre-processing step. This step is not part of the core loop of the client and will only be executed once. In this part we first read the input to the server to create our perception of the map. After this we perform a simple form of goal decomposition. Each goal cell is treated as a independent goal that must be achieved. Then for each goal we calculate the goal priority. The priority is based on whether or not other goal cells block this goal cell - that is if by solving the other goals you will then block access to this goal. Once each goal cell has a priority we then calculate the exact distance from each cell to each goal cell. This will help us have a more efficient heuristic when we want to know the distance from the boxes to the goal cells.
@@ -94,7 +107,20 @@ The heuristic function we use is a relaxed, admissible heuristic function. It us
 Since the search function will chose the state whose heuristic function returns the lowest value, adding to the value returned effectively discourages the agent from choosing that state. \textit{Possibly explain why heuristic is admissible and relaxed}.
 
 \subsection{Execute plan}
-Once each agent has a plan the will solve its current subgoal, the plan will be executed. The loop that executes the plan will terminate if the server responds \textit{false} to any of the actions given - that is if the action an agent is trying to do is not possible. The client has a blackboard architecture and has a shared variable that holds the current state of the map. This variable is updated each time and agent has performed an action successfully. It is the same variable that an agent copies when it updates its beliefs in the previous stage. Once all agents have executed their plan the loop terminated, assuming it was not terminated prematurely because of a conflict. 
+Once each agent has a plan that will solve its current subgoal, the plan will be executed. The loop that executes the plan will terminate if the server responds \textit{false} to any of the actions given - that is if the action an agent is trying to do is not possible. The client has a blackboard architecture and has a shared variable that holds the current state of the map. This variable is updated each time and agent has performed an action successfully. It is the same variable that an agent copies when it updates its beliefs in the previous stage. Once all agents have executed their plan the loop terminates, assuming it was not terminated prematurely because of a conflict.
+
+\subsection{Conflict resolution}
+When the loop mentioned above ends, a check is made for each agent to find out if its last action results in an error. If there was no error then all plans were executed successfully and this step is skipped. However, if an agent ended the loop with an error, then this agent will request the cells that it is going to occupy in the next action of its plan to be cleared. It will send this request to all other agents, and if either the agent itself occupies one of the cells to be cleared, or if the agent has the same color as a box that occupies a cell to be cleared, then this agent will search for a plan to clear these cells.
+
+Because the next action will always only occupy one new cell, it will also always only need one agent to help do the clear. In an earlier iteration of the system the agent would request all cells that will at one time get occupied in its plan to be cleared, and the fact that it sends the clearing request to all agents is a remnant of this system. This is discussed furter in the discussion section.
+
+The heuristic function used to find a plan for clearing cells is different than the one used to find a plan for achieving sub-goals. It is also an A* heuristic, but here we calculate the aggregated distance to the cells that needs to be cleared, as well as adding a big reward in terms of heuristic value when a cell is cleared. This function also tries to encourage the agent to go around obstacles that it cannot move.
+
+Once all agents that needs to clear have a plan, the plan will be executed in the same manner as descibed earlier. Again the loop is terminated when all agents have finished their plans, or when an agents action results in an error. This means that an agent resolving a conflict cannot get help from other agents in case it is blocked. This approach has some issues which we will discuss in the discussion section.
+
+If an agent has to move a box that is solving a goal cell, then the goal cell is added again to the list of sub-goals but with a lower priority.
+
+When an agent finds a clearing solution it will also be flagged as quarantined, which means it will not search for a solution for its sub-goal in the next iteration of the loop. This is in order to ensure that the agent will not intervene with the path of the agent it has just cleard for. When the \textit{Execute Plan} phase is done, all agents are unflagged as quarantined, if the agent that quarantined them successfully finished its plan. 
 
 
 \section{Results}
@@ -163,6 +189,8 @@ Your bibliography should be formatted using \texttt{aaai.bst} as this document. 
 % References and end of paper
 \bibliographystyle{aaai}
 \bibliography{bibliography}
+
+Remove this if not needed anymore (render of flowchart as jpg)
 
 \begin{figure}[!htb]
 \centering
