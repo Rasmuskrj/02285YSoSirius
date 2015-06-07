@@ -45,7 +45,10 @@ This section contains a detailed explanation of the algorithm our client uses. E
 \centering
 \includegraphics[width=\linewidth]{ClientFlowchart.pdf}
 \caption{Flowchart of the base client loop}
+\label{fig:clientFlowchart}
 \end{figure}
+
+Figure \ref{clientFlowchart} shows a visual reprensentation of the main client loop.
 
 \subsection{Preprocessing}
 The first step upon start-up is the pre-processing step. This step is not part of the core loop of the client and will only be executed once. In this part we first read the input to the server to create our perception of the map. After this we perform a simple form of goal decomposition. Each goal cell is treated as a independent goal that must be achieved. Then for each goal we calculate the goal priority. The priority is based on whether or not other goal cells block this goal cell - that is if by solving the other goals you will then block access to this goal. Once each goal cell has a priority we then calculate the exact distance from each cell to each goal cell. This will help us have a more efficient heuristic when we want to know the distance from the boxes to the goal cells.
@@ -94,7 +97,12 @@ The heuristic function we use is a relaxed, admissible heuristic function. It us
 Since the search function will chose the state whose heuristic function returns the lowest value, adding to the value returned effectively discourages the agent from choosing that state. \textit{Possibly explain why heuristic is admissible and relaxed}.
 
 \subsection{Execute plan}
-Once each agent has a plan the will solve its current subgoal, the plan will be executed. The loop that executes the plan will terminate if the server responds \textit{false} to any of the actions given - that is if the action an agent is trying to do is not possible. The client has a blackboard architecture and has a shared variable that holds the current state of the map. This variable is updated each time and agent has performed an action successfully. It is the same variable that an agent copies when it updates its beliefs in the previous stage. Once all agents have executed their plan the loop terminated, assuming it was not terminated prematurely because of a conflict. 
+Once each agent has a plan that will solve its current subgoal, the plan will be executed. The loop that executes the plan will terminate if the server responds \textit{false} to any of the actions given - that is if the action an agent is trying to do is not possible. The client has a blackboard architecture and has a shared variable that holds the current state of the map. This variable is updated each time and agent has performed an action successfully. It is the same variable that an agent copies when it updates its beliefs in the previous stage. Once all agents have executed their plan the loop terminates, assuming it was not terminated prematurely because of a conflict.
+
+\subsection{Conflict resolution}
+When the loop mentioned above a check is made for each agent to find out if its last action results in an error. If there was no error then all plans were executed successfully and this step is skipped. However, if an agent ended the loop with an error, then this agent will request the cells that it is going to occupy in the next action of its plan to be cleared. It will send this request to all other agents, and if either the agent itself occupies one of cells to be cleared, or if the agent has the same color as a box that occupies a cell to be cleared, then this agent will search for a plan to clear these cells.
+
+Because the next action will always only occupy one new cell, it will also always only need one agent to help do the clear. In an earlier iteration of the system the agent would request all cells that will at one time get occupied in its plan to be cleared, and the fact that it sends the clearing request to all agents is a remnant of this system. This is discussed furter in the discussion section. 
 
 
 \section{Results}
