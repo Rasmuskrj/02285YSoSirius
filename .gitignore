@@ -9,3 +9,4 @@ report/*.log
 report/*.aux
 report/Report.pdf
 *.gz
+*.log
