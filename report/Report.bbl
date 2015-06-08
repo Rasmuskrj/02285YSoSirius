@@ -1,0 +1,21 @@
+\begin{thebibliography}{}
+
+\bibitem[\protect\citeauthoryear{Bolander}{2015}]{compResults}
+Bolander, T.
+\newblock 2015.
+\newblock Results of competition, 02285 f15.
+\newblock Technical report, DTU.
+
+\bibitem[\protect\citeauthoryear{Han~Yu and Siegel}{2004}]{recursiveSubgoals}
+Han~Yu, Dan C.~Marinescu, A. S.~W., and Siegel, H.~J.
+\newblock 2004.
+\newblock Planning with recursive subgoals.
+\newblock Technical report, Colorado State University.
+
+\bibitem[\protect\citeauthoryear{Unknown-author}{Unknown year}]{dilation}
+Unknown-author.
+\newblock Unknown year.
+\newblock Morphological operations to binary images.
+\newblock Technical report, Technical University of Cluj-Napoca.
+
+\end{thebibliography}

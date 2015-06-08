@@ -8,5 +8,7 @@ src/main/main.iml
 report/*.log
 report/*.aux
 report/Report.pdf
+report/*.blg
+report/*.bbl
 *.gz
 *.log
