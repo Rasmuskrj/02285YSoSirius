@@ -46,11 +46,6 @@ public class Agent {
 			return null;
 		}
 
-		/*if (solution.size() > i) {
-			return solution.get(i).action.toActionString();
-		} else {
-			return "NoOp";
-		}*/
 	}
 
 	public void findNextGoal(Node currentState, PriorityQueue<Goal> subGoals){
@@ -135,10 +130,6 @@ public class Agent {
 		} else {
 			System.err.println("Solution could not be found");
 		}
-		//System.err.println("Clear solution:");
-		//for(Node n : plan){
-		//	System.err.println(n.action.toString());
-		//}
 		clearMode = false;
 		clearCords.clear();
 		quarantined = true;

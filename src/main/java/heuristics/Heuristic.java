@@ -86,15 +86,9 @@ public abstract class Heuristic implements Comparator< Node > {
 	private int manhattanSubgoalHeuristic(Node n){
 		int ret = 0;
 		Goal currentSubGoal = null;
-		//Find current main subgoal. CurrentMainGoal is set in the while-loop in OneAgentClient
+		//Find current main subgoal.
 		currentSubGoal = n.thisAgent.getCurrentSubGoal();
 
-		/*for (Goal goal : Node.getGoalsByCoordinate().values()){
-			if(goal.isCurrentMainGoal()){
-				currentSubGoal = goal;
-				break;
-			}
-		}*/
 		if(currentSubGoal != null){
 			//find closest box that can be used to solve
 			int boxDistance = Integer.MAX_VALUE;
@@ -103,7 +97,6 @@ public abstract class Heuristic implements Comparator< Node > {
 				if(!box.isInFinalPosition() && box.getLetter() == Character.toUpperCase(currentSubGoal.getLetter())){
 					HashMap<Coordinate, Integer> goalMap = Node.goalDistance.get(currentSubGoal);
 					int dist = goalMap.get(box.getCoordinate());
-					//int dist = Math.abs(box.getCoordinate().getColumn() - currentSubGoal.getCoordinate().getColumn()) + Math.abs(box.getCoordinate().getRow() - currentSubGoal.getCoordinate().getRow());
 					if(dist < boxDistance){
 						targetBox = box;
 						boxDistance = dist;
@@ -206,10 +199,6 @@ public abstract class Heuristic implements Comparator< Node > {
 
 
 	public int h(Node n) {
-		//return maxManhattanHeuristic(n);
-		//return sumManhattanHeuristic(n);
-		//return sumManhattanExcludeSolvedHeuristic(n);
-		//return sumManhattenPrioritizeClosestHeuristic(n);
 		if(!n.thisAgent.isClearMode()) {
 			return manhattanSubgoalHeuristic(n);
 		} else {

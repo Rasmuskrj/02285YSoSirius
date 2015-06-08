@@ -3,7 +3,6 @@ package client;
 import java.io.IOException;
 import java.util.*;
 
-import com.sun.org.apache.bcel.internal.generic.NEW;
 
 import client.Command.dir;
 import client.Command.type;
@@ -20,8 +19,7 @@ public class Node {
 				new HashMap<Goal, HashMap<Coordinate, Integer>>();
 
 	public Agent thisAgent = null;
-	//public int agentRow;
-	//public int agentCol;
+
     
     public static int totalRows;
     public static int totalColumns;
@@ -86,33 +84,6 @@ public class Node {
 			}
 			Node.goalDistance.put(goal, distanceMap);
 		}
-		
-		/* DEBUGGING
-		for (Goal goal : Node.getGoalsByCoordinate().values()) {
-			System.err.println(goal.getLetter() + "\n\n");
-			
-			for (int i=0; i<Node.totalRows; i++) {
-				for (int j=0; j<Node.totalColumns; j++) {
-					
-					Integer distance = Node.goalDistance.get(goal).get(new Coordinate(i, j));
-					if (distance == null) {
-						if (Node.walls.get(new Coordinate(i, j)) != null) {
-							System.err.print("   X|");
-						} else {
-							System.err.print("    |");
-						}
-					} else {
-						System.err.format("%4d|", distance);
-					}
-				}
-				System.err.println();
-			}
-			
-			System.err.println("\n\n=====================\n\n");
-		}
-		
-		System.exit(0);
-		*/
 		
 	}
 	
@@ -188,15 +159,6 @@ public class Node {
 			return true;
 		}
 
-		/*for(Goal goal : Node.getGoalsByCoordinate().values()){
-			if(goal.isCurrentMainGoal()){
-				Box box = boxesByCoordinate.get(goal.getCoordinate());
-				if(box != null && box.getLetter() == Character.toUpperCase(goal.getLetter())){
-					box.setInFinalPosition(true);
-					return true;
-				}
-			}
-		}*/
 		return false;
 	}
 
@@ -301,7 +263,6 @@ public class Node {
 											new Coordinate(newAgentRow, newAgentCol));
 						Box boxToMoveCopy = new Box(boxToMove.getLetter(), boxToMove.getColor(),
 													new Coordinate(newBoxRow, newBoxCol), boxToMove.isInFinalPosition());
-						//boxToMove.setCoordinate(new Coordinate(newBoxRow, newBoxCol));
 						n.boxesByCoordinate.put(new Coordinate(newBoxRow, newBoxCol), boxToMoveCopy);
 						n.boxesByCoordinate.remove(new Coordinate(newAgentRow, newAgentCol));
 						n.boxesByID.remove(boxToMoveCopy.getLetter());
@@ -324,9 +285,7 @@ public class Node {
 						Box boxToMoveCopy = new Box(boxToMove.getLetter(), boxToMove.getColor(),
 								new Coordinate(this.thisAgent.getCoordinate().getRow(),
 										this.thisAgent.getCoordinate().getColumn()), boxToMove.isInFinalPosition());
-						//Coordinate newBoxCoordinate = new Coordinate(this.thisAgent.getCoordinate().getRow(),
-						//					this.thisAgent.getCoordinate().getColumn());
-						//boxToMove.setCoordinate(newBoxCoordinate);
+
 						n.boxesByCoordinate.put(new Coordinate(this.thisAgent.getCoordinate().getRow(),
 								this.thisAgent.getCoordinate().getColumn()), boxToMoveCopy);
 						n.boxesByCoordinate.remove(new Coordinate(boxRow, boxCol));
@@ -580,12 +539,7 @@ public class Node {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		/*for( Agent agent : agents){
-			result = prime * result + agent.hashCode();
-		}*/
-		/*for(Box box : boxesByCoordinate.values()){
-			result = prime * result + box.hashCode();
-		}*/
+
 		result = prime * result + boxesByCoordinate.hashCode();
 		result = prime * result + thisAgent.hashCode();
 		return result;
@@ -601,51 +555,17 @@ public class Node {
 		if (getClass() != obj.getClass())
 			return false;
 		Node other = (Node) obj;
-		/*for(int i = 0; i < agents.size(); i++){
-			if(!agents.get(i).equals(other.agents.get(i))){
-				return false;
-			}
-		}*/
+
 		if(!boxesByCoordinate.equals(other.getBoxesByCoordinate())){
 			return false;
 		}
-		/*for(Box box : boxesByCoordinate.values()){
-			Coordinate boxCord = box.getCoordinate();
-			Box otherBox = other.boxesByCoordinate.get(boxCord);
-			if(!box.equals(otherBox)){
-				return false;
-			}
-		}*/
+
 		if(!thisAgent.equals(other.thisAgent)){
 			return false;
 		}
 		return true;
 	}
 
-
-
-
-	// TODO: refactor - if needed
-	/*public String toString() {
-		StringBuilder s = new StringBuilder();
-		for (int row = 0; row < this.boxes.size(); row++) {
-			if (!Node.walls.get(row).get(0)) {
-				break;
-			}
-			for (int col = 0; col < this.boxes.get(row).size(); col++) {
-				if (this.boxes.get(row).get(col) > 0) {
-					s.append(this.boxes.get(row).get(col));
-				} else if (row == this.agentRow && col == this.agentCol) {
-					s.append("0");
-				} else {
-					s.append(" ");
-				}
-			}
-
-			s.append("\n");
-		}
-		return s.toString();
-	}*/
 
 
 }

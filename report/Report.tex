@@ -139,9 +139,41 @@ For most of the SA levels our implementation tried to find a solution, albeit un
 As opposed to the SA levels, which our implementation managed to solve better, our solution performed marginally on the MA levels, if assessed absolutely (in terms of completed levels, time and used actions). However, relatively to other implementations, our solution proved again to be median.
 
 \section{Discussion}
-... Moved this from Introduction, where I initially started writing it:
+Overall we are not completely satisfied with the performance of our client. Most of our dissatisfaction stems from the areas where we feel we ran out of time and therefore did not manage to implement a robust solution. The most aparent area is the conflict resolution system. If one studies the flowchart in \ref{fig:clientFlowchart} it becomes aparant that the conflict resolution system can put the client in a deadlock situation. This is due to the fact that there is no check after a clearing agent has executed its plan, that the plan was executed sucessfully. What this actually means is that if an agent is clearing for another agent and the former agent also needs its path to be cleared by a third(or the first) agent then our client cannot resolve the situation and is in a deadlock situation.
 
-where, due to the pre-computation of what we call "distance map" the solutions to these levels were quite optimal in terms of time. It is noteworthy that we also tried to prioritize the solving of the goals based on situations where one goal might be blocked by another (or several) and, although efficient for most levels, this has proven catastrophic for levels like "SAboxesOfHanoi.lvl". Nonetheless, we decided to continue with this solution, both due to time and code complexity limitations.
+This is of course not desirable behavior, but we unfortunately postponed designing this system untill we ran out of time, and we had to simply used what we had. A more ideal system would have an inner loop of cell-clearing where agents that themselves were clearing could request a clear of certain cells to fullfil its plan.
+
+A clear example of the above-mentioned behavoir can be observed if our client try to solve the level \textit{MAGroupXXF12.lvl}. This level also showcase another shortcoming of our solution which will be mentioned in a moment. The level is shown in \ref{fig:magroupxx}. Once the client have found an initial solution for all agents in \textit{MAGroupXXF12.lvl}, all agents will try to execute their first action. They all try to move in the direction of "their" respective boxes which are placed at an opposing position to their agents who are in a 1-width corridor. This cause all the agents to try to move into other agents and the server responds \textit{false} to all actions. This causes the plan execution loop to be terminated and the conflict resolution phase begins. The agent with the lowest number will be the first that requests that the next cells it is going to use to be cleared, so agent 0 will request the cell currently occupied by agent 1 to be cleared. Since agent 1 can clear the cell by moving out of it, it will begin planning to clear this cell and abandon its own goal for the moment. Once it has a plan it will be executed, but agent 1 is boxed in by agent 2 and needs to ask agent 2 to move. However, because of the problem mentioned above, this will never happen. As mentioned this also shows another shortcoming: that the agent with the lowest number will always "win" the conflict. This is not ideal and is also a result of us running out of time.
+
+\begin{figure}[!htb]
+	\centering
+	\includegraphics[scale=0.3]{MAGroupXXF12.PNG}
+	\caption{MAGroupXXF12.lvl}
+	\label{fig:magroupxx}
+\end{figure}
+
+
+Another level that our client cannot solve and is interesting to look at is the levele \textit{MAAteam.lvl}. The initial state of the level can be seen in \ref{fig:maateam1}. In this level the same issue as already discussed along with the manner in which we clear cells brings our client to a deadlock. While solving this level agent 1 will at some point assign itself to soling subgoal \textit{b}. To do this it will first need to go to get get box \textit{B} near goal \textit{a}. While moving there it will come into conflict with agent 0 who at this time is near goal \textit{d}. Agent 1 will get agent 0 to move out of the way, but only one cell at a time, because that is how our agent works. This eventually leads to the situation in \ref{fig:maateam2}. In this state agent 0 is blocking agent 1 from reaching box \textit{B}, but agent 0 cannot move away because it is being blocked by agent 1. Because of the shortcomings mentioned above this is a situation our client cannot resolve.
+
+\begin{figure}[!htb]
+	\centering
+	\includegraphics[scale=0.3]{MAAteam1.PNG}
+	\caption{MAAteam.lvl initial state}
+	\label{fig:maateam1}
+\end{figure}
+
+\begin{figure}[!htb]
+	\centering
+	\includegraphics[scale=0.3]{MAAteam2.PNG}
+	\caption{MAAteam.lvl deadlock}
+	\label{fig:maateam2}
+\end{figure}
+
+A way to avoid the situation in \ref{fig:maateam2} could be to request all cells in the remaining plan of agent 1 to be cleared, and this was also initially the way our client worked. However, it became too hard for our agents to find a good clear solution, and the client would often time out because of this. A compromise between our current solution and the inital solution we had would probablybe ideal.
+
+Besides the levels mentioned there are several other levels that our client cannot solve. Some seem to be simply too complex for our client to find a solution, for example \textit{SADinMorF11.lvl}, while others include situations we simply did not think about, such as \textit{MAnull.lvl}. In regards to the levels that are too complex, we are still not sure if our client is simply using a suboptimal technique or algorithm, or if we simply have not optimized our code well enough.
+
+The most positive aspect of our agent we feel is the serialization of the subgoals and the distance map. These techniques allows our client to find very efficient solutions to levels, and also to always solve them in the right order. For instance, even though our client times out trying to solve \textit{SADinMorF11.lvl} it does it while trying to solve the correct goal cell. It is also worth noting that our client is the one that solves the level \textit{SAYSoSirius.lvl} with the lowest amount of actions, since this is a level that tests a clients ability to solve things in the right order.
 
 \section{Future work}
 For future work we consider some of the ideas we had during the implementation, but for various reasons we decided not to include them. We will be describing the ideas, the benefits and well as the disadvantages and other notable details.

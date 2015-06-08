@@ -101,33 +101,6 @@ public class MultiAgentClient {
 
 
 
-
-
-        //Agent agent = currentState.getAgents().get(0);
-        /*while (!subGoals.isEmpty()){
-            Goal subgoal = subGoals.poll();
-            System.err.println("Trying to solve sub-goal: " + subgoal.getLetter() + " at " + subgoal.getCoordinate().getRow() + "," + subgoal.getCoordinate().getColumn());
-            subgoal.setCurrentMainGoal(true);
-            agent.setStrategy(new StrategyBestFirst(new AStarHeuristic(currentState)));
-            LinkedList<Node> plan = this.search(agent.getStrategy());
-            System.err.println("Solution found for sub-goal: " + subgoal.getLetter() + " at " + subgoal.getCoordinate().getRow() + "," + subgoal.getCoordinate().getColumn());
-            agent.appendSolution(plan);
-            subgoal.setCurrentMainGoal(false);
-            while(update());
-            currentState = agent.getSolution().getLast();
-            currentState.agents.get(0).setSolution(agent.getSolution());
-            currentState.parent = null;
-        }*/
-        //TODO: Commented out for loop while working on single agent
-		/*for (Agent agent : currentState.getAgents()) {
-			agent.setStrategy(new StrategyBestFirst(new AStarHeuristic(currentState)));
-
-			// TODO: change to threads
-			agent.setSolution(this.search(agent.getStrategy()));
-		}*/
-
-
-
     }
 
     public static LinkedList<Node> search(Strategy strategy, Node initialState) {
