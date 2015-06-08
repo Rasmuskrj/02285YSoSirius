@@ -132,7 +132,34 @@ When an agent finds a clearing solution it will also be flagged as quarantined, 
 \section{Results}
 Although during the implementation phase we obtained solutions within the time limit for all the Single Agent levels and most of the Multi-Agent levels, while running on the competition levels we obtained average results. Besides the SA and MA levels that no team was able to complete, other levels posed a challenge and were hard to complete.
 
-A synthesis of how our solution performed, both in relation to other solution as well as in terms of absolute metrics is available in \cite{compResults}. Some of the SA and MA levels have proved too complex for our implementation to successfully solve them, while others have posed technical challenges in the form of exceptions thrown due to level complexities that we have not incorporated in our design.
+A synthesis of how our solution performed, in relation to other provided solutions is available in \cite{compResults}. In terms of absolute metrics the results are available in Table \ref{table:results}. Note that our results for the competition have been generated on a Windows 7 machine running at 2.6 GHz (Intel Core i5-3230M CPU) with 7.88 usable GB of RAM.
+
+\begin{table}[h]
+\begin{center}
+  	\begin{tabular}{ | l || r | r | }
+    	\hline
+    	\textbf{Level Name} & \textbf{Time Spent (s)} & \textbf{Actions Taken} \\ \hline
+    	SAbruteforce & 0.161 & 45 \\ \hline
+    	SACrunchF11 & 0.503 & 133 \\ \hline
+    	SAFireflyF11 & 0.436 & 166 \\ \hline
+    	SAgroup42F13 & 0.93 & 375 \\ \hline
+    	SALionFishF11 & 0.256 & 56 \\ \hline
+    	SAnull & 1.936 & 175 \\ \hline
+    	SATalos & 2.638 & 2117 \\ \hline
+    	SAYSoSirius & 162.79 & 250 \\ \hline
+    	MAFireflyF11 & 0.098 & 13 \\ \hline
+    	MAYSoSirius & 0.421 & 91 \\
+    	\hline
+	\end{tabular}
+\caption[Table caption text]{Absolute results on the competition levels}
+\label{table:results}
+\end{center}
+\end{table}
+
+%\caption{Flowchart of the base client loop}
+%\label{fig:clientFlowchart}
+
+Some of the SA and MA levels have proved too complex for our implementation to successfully solve them, while others have posed technical challenges in the form of exceptions thrown due to level complexities that we have not incorporated in our design.
 
 For most of the SA levels our implementation tried to find a solution, albeit unsuccessful. The levels that were deemed successful have taken a lot of computation time to complete, thus indicating level complexities for which our implementation was not optimized. Relative to other implementations, ours proved to be median (in terms of actions used) to good (in terms of used actions).
 
